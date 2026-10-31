@@ -978,7 +978,7 @@ if (!/^[A-Z0-9]{2,10}$/.test(PREFIJO)) {
 
 // ========== CONFIG ==========
 const API_URL  = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
-const APP_VERSION = 31; // V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
+const APP_VERSION = 32; // V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
 const HOY_KEY    = 'vao_ventas_' + PREFIJO + '_' + new Date().toISOString().slice(0, 10);
 const CARRITO_KEY= 'vao_carrito_' + PREFIJO;
 
@@ -3033,6 +3033,7 @@ function cerrarMisDatos() { document.getElementById('modalMisDatos').classList.r
 // ========== V31: HISTORIAL DE CAMBIOS (solo lectura · backend v040.4 getCambios) ==========
 let _cambios = [], _cambiosTotal = 0;
 async function abrirCambios() {
+    cerrarMisDatos(); // V32: una sola ventana a la vez (en algunos celulares el historial quedaba detrás de Mis datos)
     document.getElementById('modalCambios').classList.add('open');
     document.getElementById('cambiosFiltro').value = '';
     document.getElementById('cambiosResumen').textContent = '';
