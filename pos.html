@@ -141,6 +141,13 @@ body {
 .md-fila { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 2px; border-bottom:1px solid #eee; }
 .md-fila b { display:block; font-size:0.92rem; }
 .md-fila small { color:#777; font-size:0.76rem; }
+/* V31: Historial de cambios */
+.hc-item { padding:10px 2px; border-bottom:1px solid #eee; }
+.hc-item .hc-top { display:flex; justify-content:space-between; gap:8px; font-size:0.78rem; color:#777; }
+.hc-item .hc-prod { font-weight:700; font-size:0.92rem; margin:2px 0; }
+.hc-item .hc-lin { font-size:0.84rem; color:#333; }
+.hc-tag { font-weight:800; border-radius:8px; padding:1px 7px; font-size:0.72rem; }
+.hc-tag.aj { background:#EDE7F6; color:#4527A0; } .hc-tag.in { background:#E8F5E9; color:#1B5E20; }
 .md-fila button { border:none; border-radius:12px; padding:9px 12px; font-weight:800; background:#1565C0; color:#fff; cursor:pointer; font-family:inherit; white-space:nowrap; }
 .md-fila button:disabled { background:#9E9E9E; }
 /* V22 (B7): en celulares chicos, ícono arriba y texto abajo — no se corta */
@@ -971,7 +978,7 @@ if (!/^[A-Z0-9]{2,10}$/.test(PREFIJO)) {
 
 // ========== CONFIG ==========
 const API_URL  = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
-const APP_VERSION = 30; // V30: búsqueda por TODAS las palabras (venta, ingreso y ajuste)
+const APP_VERSION = 31; // V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
 const HOY_KEY    = 'vao_ventas_' + PREFIJO + '_' + new Date().toISOString().slice(0, 10);
 const CARRITO_KEY= 'vao_carrito_' + PREFIJO;
 
@@ -3023,6 +3030,72 @@ async function abrirMisDatos() {
 }
 function cerrarMisDatos() { document.getElementById('modalMisDatos').classList.remove('open'); }
 
+// ========== V31: HISTORIAL DE CAMBIOS (solo lectura · backend v040.4 getCambios) ==========
+let _cambios = [], _cambiosTotal = 0;
+async function abrirCambios() {
+    document.getElementById('modalCambios').classList.add('open');
+    document.getElementById('cambiosFiltro').value = '';
+    document.getElementById('cambiosResumen').textContent = '';
+    const lista = document.getElementById('cambiosLista');
+    lista.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;">Cargando…</div>';
+    try {
+        const r = await _llamarAPI('getCambios', { token: _tokenActual(), limite: 300 });
+        if (!r || !r.success) {
+            const msg = (r && r.error) || 'No se pudo cargar';
+            lista.innerHTML = '<div style="color:#C62828;padding:14px 0;">❌ ' + _escHTML(/Acción no reconocida/i.test(msg) ? 'El servidor todavía no tiene esta función (falta actualizarlo).' : msg) + '</div>';
+            return;
+        }
+        _cambios = r.cambios || []; _cambiosTotal = r.total || _cambios.length;
+        filtrarCambios();
+    } catch (e) { lista.innerHTML = '<div style="color:#C62828;padding:14px 0;">📡 Sin conexión. Probá de nuevo.</div>'; }
+}
+function cerrarCambios() { document.getElementById('modalCambios').classList.remove('open'); }
+function _fmtFechaCambio(iso) {
+    const d = new Date(iso); if (!iso || isNaN(d)) return '';
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function _pesoCambio(v) { return (v === '' || v === null || v === undefined) ? '—' : '$' + Number(v).toLocaleString('es-AR'); }
+function _lineasCambio(c) {
+    const L = [];
+    if (c.tipo === 'AJUSTE') {
+        if (c.nombreDespues) L.push('Nombre: ' + c.nombreAntes + ' → ' + c.nombreDespues);
+        if (c.stockAntes !== '' && c.stockDespues !== '' && c.stockAntes !== c.stockDespues) L.push('Stock: ' + c.stockAntes + ' → ' + c.stockDespues);
+        if (c.precioDespues !== '' && c.precioDespues !== c.precioAntes) L.push('Precio: ' + _pesoCambio(c.precioAntes) + ' → ' + _pesoCambio(c.precioDespues));
+        if (c.categoriaDespues) L.push('Categoría: ' + (c.categoriaAntes || '—') + ' → ' + c.categoriaDespues);
+        if (!L.length) L.push('Sin cambios de valores (stock ' + (c.stockDespues !== '' ? c.stockDespues : '—') + ')');
+    } else {
+        L.push('Ingresó +' + (c.cantidad !== '' ? c.cantidad : '?') + (c.stockAntes !== '' && c.stockDespues !== '' ? ' (stock ' + c.stockAntes + ' → ' + c.stockDespues + ')' : ''));
+        const pr = [];
+        if (c.costo !== '') pr.push('costo ' + _pesoCambio(c.costo));
+        if (c.venta !== '') pr.push('venta ' + _pesoCambio(c.venta));
+        if (c.proveedor) pr.push('proveedor ' + c.proveedor);
+        if (pr.length) L.push(pr.join(' · '));
+    }
+    return L;
+}
+function filtrarCambios() {
+    const q = normalizarBusqueda(document.getElementById('cambiosFiltro').value || '');
+    const palabras = q.split(/\s+/).filter(Boolean);
+    const vis = _cambios.filter(c => {
+        if (!palabras.length) return true;
+        const n = normalizarBusqueda(c.producto + ' ' + (c.nombreDespues || ''));
+        return palabras.every(w => n.includes(w));
+    });
+    const lista = document.getElementById('cambiosLista');
+    document.getElementById('cambiosResumen').textContent = _cambios.length
+        ? 'Mostrando ' + vis.length + (palabras.length ? ' de ' + _cambios.length : '') + (_cambiosTotal > _cambios.length ? ' (los ' + _cambios.length + ' más nuevos de ' + _cambiosTotal + ')' : '') + '.'
+        : '';
+    if (!vis.length) {
+        lista.innerHTML = '<div style="text-align:center;padding:24px;color:#999;">' + (_cambios.length ? 'Ningún cambio de ese producto.' : 'Todavía no hay cambios registrados.') + '</div>';
+        return;
+    }
+    lista.innerHTML = vis.map(c => '<div class="hc-item"><div class="hc-top"><span>' + _escHTML(_fmtFechaCambio(c.fecha)) + '</span>' +
+        '<span class="hc-tag ' + (c.tipo === 'AJUSTE' ? 'aj">✏️ Ajuste' : 'in">📦 Ingreso') + '</span></div>' +
+        '<div class="hc-prod">' + _escHTML(c.producto) + '</div>' +
+        _lineasCambio(c).map(l => '<div class="hc-lin">' + _escHTML(l) + '</div>').join('') + '</div>').join('');
+}
+
 // Celda segura para CSV: siempre entre comillas dobles (soporta ; comillas y saltos de línea).
 // Si empieza con = + - @ (o tab/retorno) se antepone un apóstrofo para que Excel no la ejecute como fórmula.
 // Excepción: un número NEGATIVO legítimo (-5 · -1500 · -1.234,56 · -1234.5 · -$1.500 · -5%) queda tal cual,
@@ -3102,8 +3175,28 @@ async function descargarDatos(que) {
         </div>
         <div style="overflow-y:auto;max-height:78vh;padding:0 16px 18px;">
             <div style="font-size:0.82rem;color:#555;margin:2px 0 8px;">Tus registros son tuyos. Descargá cada hoja en un archivo que abre Excel o Google Sheets (CSV). Solo tus datos: nunca los de otros comercios.</div>
+            <!-- V31: herramientas de control del comercio -->
+            <button onclick="abrirCambios()" style="width:100%;margin:4px 0 12px;padding:12px;border:none;border-radius:12px;background:#EDE7F6;color:#4527A0;font-weight:800;font-family:inherit;font-size:0.92rem;cursor:pointer;">🕵️ Historial de cambios (precios, stock e ingresos)</button>
             <div id="misDatosLista"><div style="text-align:center;padding:30px;color:#bbb;">Cargando…</div></div>
             <div id="misDatosEstado" style="font-size:0.82rem;color:#0D47A1;font-weight:700;margin-top:10px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== V31: MODAL HISTORIAL DE CAMBIOS (solo lectura) ===== -->
+<div class="modal-bg" id="modalCambios" onclick="if(event.target===this)cerrarCambios()">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <span class="modal-titulo">🕵️ Historial de cambios</span>
+            <button class="modal-cerrar" onclick="cerrarCambios()">✕</button>
+        </div>
+        <div style="overflow-y:auto;max-height:78vh;padding:0 16px 18px;">
+            <div style="font-size:0.82rem;color:#555;margin:2px 0 8px;">Qué se cambió y cuándo: ajustes de nombre, stock, precio y categoría, e ingresos de mercadería. Solo se puede mirar: nada se modifica desde acá.</div>
+            <input type="text" id="cambiosFiltro" oninput="filtrarCambios()" placeholder="🔍 Filtrar por producto…" autocomplete="off"
+                   style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:12px;font-family:inherit;font-size:0.92rem;margin-bottom:6px;box-sizing:border-box;">
+            <div id="cambiosResumen" style="font-size:0.78rem;color:#777;margin:2px 0 6px;"></div>
+            <div id="cambiosLista"><div style="text-align:center;padding:30px;color:#bbb;">Cargando…</div></div>
         </div>
     </div>
 </div>
