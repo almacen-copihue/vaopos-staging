@@ -971,7 +971,7 @@ if (!/^[A-Z0-9]{2,10}$/.test(PREFIJO)) {
 
 // ========== CONFIG ==========
 const API_URL  = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
-const APP_VERSION = 29;
+const APP_VERSION = 30; // V30: búsqueda por TODAS las palabras (venta, ingreso y ajuste)
 const HOY_KEY    = 'vao_ventas_' + PREFIJO + '_' + new Date().toISOString().slice(0, 10);
 const CARRITO_KEY= 'vao_carrito_' + PREFIJO;
 
@@ -1448,13 +1448,23 @@ function scoreBusqueda(nombreNorm, terminos) {
     return score;
 }
 
+// V30: con 2 o más palabras, el producto tiene que tener TODAS (cada una, o un sinónimo suyo)
+// ANTES de ordenar y cortar. Con una sola palabra queda igual que V29.
+function _gruposPorPalabra(termNorm) {
+    return termNorm.split(/\s+/).filter(Boolean).map(pal => expandirTerminos(pal));
+}
+function _tieneTodasLasPalabras(nombreNorm, grupos) {
+    return grupos.every(g => g.some(t => t && nombreNorm.includes(t)));
+}
 function _buscarInteligenteResultados(term) {
     const termNorm = normalizarBusqueda(term);
     if (!termNorm) return [];
     const terminos = expandirTerminos(termNorm);
+    const grupos = _gruposPorPalabra(termNorm);
+    const variasPalabras = grupos.length >= 2;
     return productos
-        .map(p => ({ p, score: scoreBusqueda(normalizarBusqueda(p.name), terminos) }))
-        .filter(({ score }) => score > 0)
+        .map(p => { const n = normalizarBusqueda(p.name); return { p, n, score: scoreBusqueda(n, terminos) }; })
+        .filter(({ n, score }) => score > 0 && (!variasPalabras || _tieneTodasLasPalabras(n, grupos)))
         .sort((a, b) => {
             // con stock primero, después por score
             const sa = a.p.stock > 0 ? 1 : 0;
@@ -1464,6 +1474,14 @@ function _buscarInteligenteResultados(term) {
         })
         .map(({ p }) => p)
         .slice(0, 15);
+}
+
+// V30: Ingreso y Ajuste — todas las palabras, en cualquier orden, sin acentos ni signos. Sin sinónimos
+// (en esas pantallas se busca UN producto concreto). Mantiene el orden de la lista de productos.
+function _filtrarPorPalabras(qNorm) {
+    const palabras = (qNorm || '').split(/\s+/).filter(Boolean);
+    if (!palabras.length) return [];
+    return productos.filter(p => { const n = normalizarBusqueda(p.name); return palabras.every(w => n.includes(w)); });
 }
 
 let _searchTimeout;
@@ -2234,7 +2252,7 @@ function buscarProductoIngreso() {
     document.getElementById('ingInfo').style.display = 'none';
     if (q.length < 2) { div.style.display = 'none'; return; }
     const qNorm = normalizarBusqueda(q);
-    const matches = productos.filter(p => normalizarBusqueda(p.name).includes(qNorm)).slice(0, 8);
+    const matches = _filtrarPorPalabras(qNorm).slice(0, 8); // V30: palabras en cualquier orden
     if (!matches.length) { div.style.display = 'none'; return; }
     div.innerHTML = matches.map(p => {
         const c = colorStock(p.stock);
@@ -2412,7 +2430,7 @@ function buscarAjuste() {
     const div = document.getElementById('ajusteResultados');
     document.getElementById('ajustePanel').style.display = 'none';
     if (q.length < 2) { div.style.display = 'none'; return; }
-    const matches = productos.filter(p => p.name.includes(q)).slice(0, 12);
+    const matches = _filtrarPorPalabras(normalizarBusqueda(q)).slice(0, 12); // V30: sin acentos y en cualquier orden
     if (!matches.length) { div.style.display = 'none'; return; }
     div.innerHTML = matches.map(p => {
         const c = colorStock(p.stock);
