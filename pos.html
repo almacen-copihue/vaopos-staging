@@ -618,6 +618,10 @@ body {
 }
 
 @media (max-width: 600px) { .txt-soporte { display:none; } } /* V34 */
+/* V36: reloj del PIN y aviso de actualización */
+.pin-reloj { width:20px; height:20px; border:3px solid rgba(255,255,255,0.35); border-top-color:#fff; border-radius:50%; animation:pinGira .8s linear infinite; flex-shrink:0; }
+@keyframes pinGira { to { transform: rotate(360deg); } }
+#avisoVersion { position:fixed; left:50%; top:14px; transform:translateX(-50%); z-index:6000; background:#2CCB6F; color:#0E1A12; font-weight:800; font-size:0.9rem; padding:10px 16px; border-radius:999px; box-shadow:0 6px 18px rgba(0,0,0,.25); max-width:92vw; text-align:center; }
 </style>
 </head>
 <body>
@@ -650,6 +654,9 @@ body {
         <div id="overlayPinTitulo" style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;margin-bottom:4px;">Verificando sesión...</div>
         <div id="overlayPinSub" style="font-size:0.8rem;opacity:0.75;margin-bottom:24px;">VAO Sistemas</div>
 
+        <div id="overlayPinCargando" role="status" aria-live="polite" style="display:none;align-items:center;justify-content:center;gap:10px;margin:0 0 14px;padding:12px;border-radius:12px;background:rgba(255,255,255,0.16);font-weight:800;font-size:1rem;">
+            <span class="pin-reloj" aria-hidden="true"></span><span>Verificando…</span>
+        </div>
         <div id="overlayPinForm" style="display:none;">
             <input type="text" id="overlayPinInput" maxlength="6" inputmode="numeric" pattern="[0-9]*"
                    placeholder="PIN de 6 dígitos" autocomplete="off"
@@ -1001,7 +1008,7 @@ if (!/^[A-Z0-9]{2,10}$/.test(PREFIJO)) {
 
 // ========== CONFIG ==========
 const API_URL  = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
-const APP_VERSION = 34; // V34: botón 💬 Soporte por WhatsApp a VAO Sistemas (encabezado y pantalla del PIN) · V33: app instalable (manifest + service worker sin copias) y recuerda el último comercio · V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
+const APP_VERSION = 36; // V36: PIN: cierra el teclado y muestra ⏳ Verificando visible arriba; aviso único de versión nueva · V35: 📣 comparte planes.html?v=N (WhatsApp guarda la vista previa vieja de un link ya enviado) · V34: botón 💬 Soporte por WhatsApp a VAO Sistemas (encabezado y pantalla del PIN) · V33: app instalable (manifest + service worker sin copias) y recuerda el último comercio · V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
 const HOY_KEY    = 'vao_ventas_' + PREFIJO + '_' + new Date().toISOString().slice(0, 10);
 const CARRITO_KEY= 'vao_carrito_' + PREFIJO;
 
@@ -1078,6 +1085,9 @@ async function intentarLoginPin() {
         return;
     }
     btn.disabled = true; btn.textContent = 'Verificando...';
+    // V36: cerrar el teclado (sacar el foco) y mostrar el reloj ARRIBA del PIN, visible aunque el teclado tarde en bajar.
+    try { document.getElementById('overlayPinInput').blur(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+    const _cargando = document.getElementById('overlayPinCargando'); if (_cargando) _cargando.style.display = 'flex';
     try {
         const url = API_URL + '?action=clienteLogin&data=' + encodeURIComponent(JSON.stringify({ prefijo: PREFIJO, pin: pin, modoConsulta: true })); // V25
         const r = await fetch(url, { redirect: 'follow' });
@@ -1092,6 +1102,7 @@ async function intentarLoginPin() {
     } catch (e) {
         mostrarFormularioPin('Sin conexión');
     }
+    if (_cargando) _cargando.style.display = 'none'; // V36
     btn.disabled = false; btn.textContent = 'Ingresar';
 }
 
@@ -1113,6 +1124,7 @@ async function verificarSesionCliente() {
             mostrarEstadoPrueba(CONFIG_ACTUAL.estadoPrueba); // V23
             aplicarModoConsulta(CONFIG_ACTUAL.modoConsulta); // V25: vencido o suspendido → solo lectura
             mpRetornoSiCorresponde(); // V29: volviendo de Mercado Pago
+            avisarVersionNueva(); // V36
             // Paso 11: el catálogo (con costos y proveedores) recién se
             // pide una vez que la sesión quedó confirmada como válida —
             // antes se pedía en el INIT del script, sin esperar el login.
@@ -1164,7 +1176,7 @@ function colorPorPrefijo(prefijo) {
 }
 
 // V24: el enlace público es planes.html del mismo sitio (sin datos del comercio ni del cliente).
-function _urlPlanes() { return new URL('planes.html', location.href).href.split('?')[0].split('#')[0]; }
+function _urlPlanes() { return new URL('planes.html', location.href).href.split('?')[0].split('#')[0] + '?v=' + APP_VERSION; } // V35: ?v= fuerza a WhatsApp a leer la imagen actual
 function abrirRecomendar() {
     const url = _urlPlanes();
     document.getElementById('recWhatsApp').href = 'https://wa.me/?text=' + encodeURIComponent('Te recomiendo VAO POS para organizar tu comercio (ventas, stock y fiados desde el celular). Probalo gratis 7 días: ' + url);
@@ -1176,6 +1188,15 @@ async function copiarRecomendar() {
     const url = _urlPlanes(), b = document.getElementById('recCopiar');
     try { await navigator.clipboard.writeText(url); } catch (e) { const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (x) {} t.remove(); }
     b.textContent = 'Enlace copiado'; setTimeout(() => { b.textContent = 'Copiar enlace'; }, 2000);
+}
+
+// V36: una sola vez por aparato, cuando cambia la versión: "VAO POS se actualizó a VNN". No en la primera vez.
+function avisarVersionNueva() {
+    let ant = null; try { ant = localStorage.getItem('vao_version_vista'); localStorage.setItem('vao_version_vista', String(APP_VERSION)); } catch (e) { return; }
+    if (!ant || Number(ant) >= APP_VERSION) return;
+    const d = document.createElement('div'); d.id = 'avisoVersion';
+    d.textContent = '✅ VAO POS se actualizó a V' + APP_VERSION;
+    document.body.appendChild(d); setTimeout(() => d.remove(), 4500);
 }
 
 // V34: soporte de VAO Sistemas por WhatsApp. Solo abre un chat con un texto armado:
