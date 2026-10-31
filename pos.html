@@ -658,12 +658,16 @@ body {
             <span class="pin-reloj" aria-hidden="true"></span><span>Verificando…</span>
         </div>
         <div id="overlayPinForm" style="display:none;">
-            <input type="text" id="overlayPinInput" maxlength="6" inputmode="numeric" pattern="[0-9]*"
-                   placeholder="PIN de 6 dígitos" autocomplete="off"
+            <div style="position:relative;">
+            <input type="password" id="overlayPinInput" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+                   placeholder="6 números" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true"
                    onkeydown="if(event.key==='Enter')intentarLoginPin()"
                    style="width:100%;padding:16px;border:none;border-radius:12px;font-size:1.4rem;
                           text-align:center;letter-spacing:0.4em;outline:none;margin-bottom:14px;
-                          font-family:'DM Sans',sans-serif;box-sizing:border-box;">
+                          font-family:'DM Sans',sans-serif;box-sizing:border-box;padding-right:52px;padding-left:52px;">
+            <button type="button" id="overlayPinOjo" onclick="alternarVerPin()" aria-label="Mostrar el PIN" title="Mostrar / ocultar el PIN"
+                    style="position:absolute;right:8px;top:8px;width:40px;height:40px;border:none;border-radius:10px;background:#EEF3FB;font-size:1.15rem;cursor:pointer;">👁️</button>
+            </div>
             <div id="overlayPinError" style="color:#ffcdd2;font-size:0.85rem;min-height:18px;margin-bottom:10px;"></div>
             <button id="overlayPinBtn" onclick="intentarLoginPin()"
                     style="width:100%;padding:14px;border:none;border-radius:50px;
@@ -721,6 +725,8 @@ body {
   <div style="background:#fff;width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:18px 16px 22px;font-family:inherit;">
     <div style="font-weight:900;font-size:1.05rem;color:#0D47A1;margin-bottom:4px;">Recomendar VAO POS</div>
     <div style="font-size:0.88rem;color:#555;margin-bottom:12px;">Pasale el enlace a otro comerciante: puede probarlo gratis 7 días.</div>
+    <button id="recCompartir" onclick="compartirConAfiche()" style="display:none;width:100%;background:#1E8E4E;color:#fff;border:none;border-radius:12px;padding:13px;font-weight:800;font-family:inherit;font-size:1rem;margin-bottom:6px;cursor:pointer;">📤 Compartir con el afiche</button>
+    <div id="recCompartirNota" style="display:none;font-size:0.78rem;color:#666;text-align:center;margin:0 0 10px;">Se abre el menú del celular: elegí <b>WhatsApp</b> o <b>WhatsApp Business</b>.</div>
     <a id="recWhatsApp" href="#" target="_blank" rel="noopener" style="display:block;text-align:center;background:#1E8E4E;color:#fff;border-radius:12px;padding:13px;font-weight:800;text-decoration:none;margin-bottom:8px;">Compartir por WhatsApp</a>
     <button id="recCopiar" onclick="copiarRecomendar()" style="width:100%;background:#fff;border:2px solid #C9D8EA;color:#0D47A1;border-radius:12px;padding:12px;font-weight:800;font-family:inherit;margin-bottom:8px;cursor:pointer;">Copiar enlace</button>
     <a id="recPagina" href="planes.html" target="_blank" rel="noopener" style="display:block;text-align:center;color:#1E88E5;font-weight:700;padding:6px;">Ver la página y el código QR</a>
@@ -1008,7 +1014,7 @@ if (!/^[A-Z0-9]{2,10}$/.test(PREFIJO)) {
 
 // ========== CONFIG ==========
 const API_URL  = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
-const APP_VERSION = 36; // V36: PIN: cierra el teclado y muestra ⏳ Verificando visible arriba; aviso único de versión nueva · V35: 📣 comparte planes.html?v=N (WhatsApp guarda la vista previa vieja de un link ya enviado) · V34: botón 💬 Soporte por WhatsApp a VAO Sistemas (encabezado y pantalla del PIN) · V33: app instalable (manifest + service worker sin copias) y recuerda el último comercio · V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
+const APP_VERSION = 36; // V36: PIN oculto ●●●●●● con 👁️; 📣 Compartir con el afiche (menú del celular: elegís WhatsApp Business); PIN: cierra el teclado y muestra ⏳ Verificando visible arriba; aviso único de versión nueva · V35: 📣 comparte planes.html?v=N (WhatsApp guarda la vista previa vieja de un link ya enviado) · V34: botón 💬 Soporte por WhatsApp a VAO Sistemas (encabezado y pantalla del PIN) · V33: app instalable (manifest + service worker sin copias) y recuerda el último comercio · V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
 const HOY_KEY    = 'vao_ventas_' + PREFIJO + '_' + new Date().toISOString().slice(0, 10);
 const CARRITO_KEY= 'vao_carrito_' + PREFIJO;
 
@@ -1181,13 +1187,47 @@ function abrirRecomendar() {
     const url = _urlPlanes();
     document.getElementById('recWhatsApp').href = 'https://wa.me/?text=' + encodeURIComponent('Te recomiendo VAO POS para organizar tu comercio (ventas, stock y fiados desde el celular). Probalo gratis 7 días: ' + url);
     document.getElementById('recPagina').href = url;
+    // V36: si el celular permite compartir archivos, se ofrece compartir el afiche + el texto con el menú del sistema
+    // (ahí se elige WhatsApp o WhatsApp Business). El enlace de WhatsApp queda como segunda opción.
+    const puede = !!(navigator.share && navigator.canShare);
+    document.getElementById('recCompartir').style.display = puede ? 'block' : 'none';
+    document.getElementById('recCompartirNota').style.display = puede ? 'block' : 'none';
+    document.getElementById('recWhatsApp').textContent = puede ? 'Solo el enlace por WhatsApp' : 'Compartir por WhatsApp';
+    const w = document.getElementById('recWhatsApp'); // V36: con afiche disponible, el enlace solo queda como opción secundaria
+    w.style.background = puede ? '#fff' : '#1E8E4E'; w.style.color = puede ? '#1E8E4E' : '#fff'; w.style.border = puede ? '2px solid #1E8E4E' : 'none';
     document.getElementById('panelRecomendar').style.display = 'flex';
+}
+const _TEXTO_RECOMENDAR = 'Te recomiendo VAO POS para organizar tu comercio (ventas, stock y fiados desde el celular). Probalo gratis 7 días: ';
+async function compartirConAfiche() {
+    const url = _urlPlanes(), texto = _TEXTO_RECOMENDAR + url, b = document.getElementById('recCompartir');
+    b.disabled = true; const t0 = b.textContent; b.textContent = 'Preparando…';
+    try {
+        let datos = { title: 'VAO POS', text: texto };
+        try {
+            const r = await fetch(new URL('og-vao-pos.jpg', location.href).href, { cache: 'force-cache' });
+            if (r.ok) {
+                const f = new File([await r.blob()], 'VAO-POS.jpg', { type: 'image/jpeg' });
+                if (navigator.canShare({ files: [f] })) datos = { files: [f], title: 'VAO POS', text: texto };
+            }
+        } catch (e) {}
+        await navigator.share(datos);
+    } catch (e) {
+        if (!e || e.name !== 'AbortError') window.open(document.getElementById('recWhatsApp').href, '_blank', 'noopener');
+    } finally { b.disabled = false; b.textContent = t0; }
 }
 function cerrarRecomendar() { document.getElementById('panelRecomendar').style.display = 'none'; }
 async function copiarRecomendar() {
     const url = _urlPlanes(), b = document.getElementById('recCopiar');
     try { await navigator.clipboard.writeText(url); } catch (e) { const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (x) {} t.remove(); }
     b.textContent = 'Enlace copiado'; setTimeout(() => { b.textContent = 'Copiar enlace'; }, 2000);
+}
+
+// V36: mostrar/ocultar el PIN un momento (estándar: oculto por defecto).
+function alternarVerPin() {
+    const i = document.getElementById('overlayPinInput'), b = document.getElementById('overlayPinOjo');
+    const ver = i.type === 'password';
+    i.type = ver ? 'text' : 'password';
+    b.textContent = ver ? '🙈' : '👁️'; b.setAttribute('aria-label', ver ? 'Ocultar el PIN' : 'Mostrar el PIN');
 }
 
 // V36: una sola vez por aparato, cuando cambia la versión: "VAO POS se actualizó a VNN". No en la primera vez.
