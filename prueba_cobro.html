@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>VAO POS · Prueba de cobro (STAGING)</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --tx:#1d2330; --mut:#647086; --ok:#1b7f3b; --warn:#a35d00; --err:#b3261e; --pri:#2453c4; --borde:#dfe3ea; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--tx); }
+  header { background:#7a1f1f; color:#fff; padding:10px 16px; font-weight:600; }
+  header small { display:block; font-weight:400; opacity:.9; }
+  main { max-width:900px; margin:0 auto; padding:12px 16px 60px; }
+  section { background:var(--card); border:1px solid var(--borde); border-radius:10px; padding:12px; margin:12px 0; }
+  h2 { font-size:16px; margin:0 0 8px; }
+  label { display:block; font-size:13px; color:var(--mut); margin:6px 0 2px; }
+  input, select, button { font:inherit; padding:8px; border:1px solid var(--borde); border-radius:8px; }
+  input, select { width:100%; background:#fff; }
+  button { background:var(--pri); color:#fff; border:none; cursor:pointer; }
+  button.sec { background:#e9edf5; color:var(--tx); }
+  button:disabled { opacity:.5; cursor:default; }
+  .fila { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; align-items:end; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  td, th { padding:6px 4px; border-bottom:1px solid var(--borde); text-align:left; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .msg { padding:10px; border-radius:8px; margin-top:8px; white-space:pre-wrap; }
+  .msg.ok { background:#e7f5ec; color:var(--ok); } .msg.warn { background:#fff3e0; color:var(--warn); } .msg.err { background:#fdecea; color:var(--err); }
+  .mut { color:var(--mut); font-size:13px; }
+  .oculto { display:none; }
+</style>
+</head>
+<body>
+<header>VAO POS · Prueba de cobro — SOLO STAGING
+  <small>Página técnica para probar el motor v041 (mixto, monedas, fiado, deuda). No es la pantalla comercial. No usar en producción.</small>
+</header>
+<main>
+  <section id="secLogin">
+    <h2>1. Entrar</h2>
+    <div class="fila">
+      <div><label for="pref">Prefijo del comercio</label><input id="pref" maxlength="3" autocomplete="off" placeholder="XX"></div>
+      <div><label for="pin">PIN</label><input id="pin" type="password" inputmode="numeric" autocomplete="off"></div>
+      <div><button id="btnEntrar">Entrar</button></div>
+    </div>
+    <div id="msgLogin"></div>
+  </section>
+
+  <div id="app" class="oculto">
+    <section>
+      <h2>2. Compra</h2>
+      <div class="fila">
+        <div style="grid-column:span 2"><label for="prod">Producto</label><select id="prod"></select></div>
+        <div><label for="cant">Cantidad</label><input id="cant" type="number" min="1" step="1" value="1"></div>
+        <div><button id="btnAgregar" class="sec">Agregar</button></div>
+      </div>
+      <table id="tablaCarrito"><thead><tr><th>Producto</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Total</th><th></th></tr></thead><tbody></tbody></table>
+      <p class="mut">Total compra: <b id="totCompra">$0</b></p>
+    </section>
+
+    <section>
+      <h2>3. Pagos recibidos</h2>
+      <div class="fila">
+        <div><label for="medio">Medio</label><select id="medio"><option>EFECTIVO</option><option>DEBITO</option><option>QR_POSNET</option><option>TRANSFERENCIA</option></select></div>
+        <div><label for="moneda">Moneda (solo efectivo)</label><select id="moneda"><option>ARS</option><option>USD</option><option>CLP</option></select></div>
+        <div><label for="monto">Monto (en esa moneda)</label><input id="monto" type="number" min="0" step="0.01"></div>
+        <div><button id="btnPago" class="sec">Agregar pago</button></div>
+      </div>
+      <table id="tablaPagos"><thead><tr><th>Medio</th><th>Moneda</th><th class="num">Monto</th><th></th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section>
+      <h2>4. Fiado o deuda (opcional, una sola cosa por cobro)</h2>
+      <div class="fila">
+        <div><label for="extra">Opción</label><select id="extra"><option value="">Ninguna</option><option value="fiado">Fiar lo que falta</option><option value="sumar">Sumar pago de deuda</option><option value="vuelto">Vuelto a la deuda</option></select></div>
+        <div><label for="cli">Cliente</label><input id="cli" autocomplete="off"></div>
+        <div><label for="tel">Teléfono</label><input id="tel" inputmode="tel" autocomplete="off"></div>
+        <div><label for="montoDeuda">Monto a la deuda (solo "sumar")</label><input id="montoDeuda" type="number" min="0" step="0.01"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Revisar y cobrar</h2>
+      <div class="fila">
+        <div><button id="btnPrevia" class="sec">Revisar</button></div>
+        <div><button id="btnCobrar" disabled>Confirmar cobro</button></div>
+        <div><button id="btnNuevo" class="sec">Nuevo cobro</button></div>
+      </div>
+      <p class="mut">Número de operación: <code id="opId"></code> — si se corta la conexión, tocá <b>Confirmar cobro</b> otra vez: usa el mismo número y no se cobra dos veces.</p>
+      <div id="msgCobro"></div>
+    </section>
+
+    <section>
+      <h2>6. Consultas</h2>
+      <div class="fila">
+        <div><button id="btnCaja" class="sec">Caja de hoy</button></div>
+        <div><button id="btnDeuda" class="sec">Deuda del cliente (de arriba)</button></div>
+      </div>
+      <div id="msgConsulta"></div>
+    </section>
+
+    <section>
+      <h2>7. Anular un abono</h2>
+      <div class="fila">
+        <div><label for="idMov">IdMov del abono (hoja ABONOS_XX, columna A)</label><input id="idMov" autocomplete="off"></div>
+        <div><label for="motivo">Motivo</label><input id="motivo" autocomplete="off"></div>
+        <div><button id="btnAnular" class="sec">Anular</button></div>
+      </div>
+      <div id="msgAnular"></div>
+    </section>
+    <section>
+      <h2>8. Clientes: desactivar, reactivar o eliminar</h2>
+      <div class="fila"><div><button id="btnClientes" class="sec">Ver clientes</button></div></div>
+      <table id="tablaClientes"><thead><tr><th>Cliente</th><th>Estado</th><th></th></tr></thead><tbody></tbody></table>
+      <div id="msgClientes"></div>
+    </section>
+  </div>
+</main>
+<script>
+// SOLO STAGING: esta página habla únicamente con la implementación de STAGING (planilla propia). v041 rechaza cualquier otra planilla.
+const API_URL = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
+let PREF = '', TOKEN = '', PRODUCTOS = [], carrito = [], pagos = [], OPID = '', ESPERADO = null;
+const $ = id => document.getElementById(id);
+const pesos = n => '$' + Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
+const msg = (id, texto, tipo) => { $(id).innerHTML = ''; const d = document.createElement('div'); d.className = 'msg ' + tipo; d.textContent = texto; $(id).appendChild(d); };
+const nuevoOp = () => { const t = new Date(), p = n => String(n).padStart(2, '0'); OPID = 'PRB_' + t.getFullYear() + p(t.getMonth() + 1) + p(t.getDate()) + '-' + p(t.getHours()) + p(t.getMinutes()) + p(t.getSeconds()) + '-' + Math.random().toString(36).slice(2, 6).toUpperCase(); $('opId').textContent = OPID; ESPERADO = null; $('btnCobrar').disabled = true; };
+
+async function api(action, data, sinPrefijo) {
+  const cuerpo = { action, data }; if (!sinPrefijo) cuerpo.prefijo = PREF;
+  try {
+    const r = await fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(cuerpo) });
+    return await r.json();
+  } catch (e) {
+    return { error: 'No hay conexión con el servidor. Si estabas cobrando, NO cargues el cobro de nuevo: cuando vuelva la conexión tocá Confirmar cobro (mismo número, no se duplica).', sinConexion: true };
+  }
+}
+
+$('btnEntrar').onclick = async () => {
+  PREF = $('pref').value.trim().toUpperCase();
+  const r = await api('clienteLogin', { prefijo: PREF, pin: $('pin').value.trim() }, true);
+  $('pin').value = '';
+  if (!r.token) return msg('msgLogin', r.error || 'No se pudo entrar.', 'err');
+  TOKEN = r.token;
+  const p = await api('getProductos', { token: TOKEN });
+  if (!p.productos) return msg('msgLogin', p.error || 'No se pudieron leer los productos.', 'err');
+  PRODUCTOS = p.productos;
+  $('prod').innerHTML = PRODUCTOS.map((x, i) => '<option value="' + i + '">' + x.name.replace(/</g, '&lt;') + ' — ' + pesos(x.price) + ' (stock ' + x.stock + ')</option>').join('');
+  $('secLogin').classList.add('oculto'); $('app').classList.remove('oculto'); nuevoOp();
+};
+
+function pintar() {
+  $('tablaCarrito').tBodies[0].innerHTML = carrito.map((c, i) => '<tr><td>' + c.name.replace(/</g, '&lt;') + '</td><td class="num">' + c.qty + '</td><td class="num">' + pesos(c.precioVenta) + '</td><td class="num">' + pesos(c.qty * c.precioVenta) + '</td><td><button class="sec" data-q="' + i + '">Quitar</button></td></tr>').join('');
+  $('totCompra').textContent = pesos(carrito.reduce((s, c) => s + c.qty * c.precioVenta, 0));
+  $('tablaPagos').tBodies[0].innerHTML = pagos.map((p, i) => '<tr><td>' + p.medio + '</td><td>' + p.moneda + '</td><td class="num">' + p.monto + '</td><td><button class="sec" data-p="' + i + '">Quitar</button></td></tr>').join('');
+  document.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { carrito.splice(+b.dataset.q, 1); cambio(); });
+  document.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { pagos.splice(+b.dataset.p, 1); cambio(); });
+}
+function cambio() { ESPERADO = null; $('btnCobrar').disabled = true; pintar(); }
+$('btnAgregar').onclick = () => { const x = PRODUCTOS[+$('prod').value]; const q = parseInt($('cant').value, 10); if (!x || !(q > 0)) return;
+  carrito.push({ id: x.id, codigo: x.codigo, name: x.name, qty: q, precioVenta: x.price }); cambio(); };
+$('btnPago').onclick = () => { const m = Number($('monto').value); if (!(m > 0)) return; const medio = $('medio').value;
+  pagos.push({ medio, moneda: medio === 'EFECTIVO' ? $('moneda').value : 'ARS', monto: m }); $('monto').value = ''; cambio(); };
+['extra', 'cli', 'tel', 'montoDeuda'].forEach(id => $(id).oninput = () => { ESPERADO = null; $('btnCobrar').disabled = true; });
+
+function armarOp() {
+  const op = { opId: OPID, items: carrito, pagos }, ex = $('extra').value, cli = $('cli').value.trim(), tel = $('tel').value.trim();
+  if (ex === 'fiado') op.fiado = { cliente: cli, telefono: tel };
+  if (ex === 'sumar') { op.deuda = { cliente: cli, telefono: tel, modo: 'SUMAR' }; if ($('montoDeuda').value) op.deuda.monto = Number($('montoDeuda').value); }
+  if (ex === 'vuelto') op.deuda = { cliente: cli, telefono: tel, modo: 'VUELTO' };
+  return op;
+}
+$('btnPrevia').onclick = async () => {
+  const r = await api('previsualizarCobro', { token: TOKEN, op: armarOp() });
+  if (!r.success) return msg('msgCobro', r.error || 'No se pudo revisar.', 'err');
+  ESPERADO = r.esperado; $('btnCobrar').disabled = false;
+  const lineas = ['Compra: ' + pesos(r.esperado.total), r.esperado.deuda ? 'A la deuda: ' + pesos(r.esperado.deuda) : '', r.esperado.fiado ? 'Queda fiado: ' + pesos(r.esperado.fiado) : '', 'Vuelto (efectivo en pesos): ' + pesos(r.esperado.vuelto)]
+    .concat(r.ingresos.map(i => '· ' + i.medio + (i.moneda !== 'ARS' ? ' ' + i.moneda : '') + ': ' + pesos(i.importe))).concat((r.avisos || []).map(a => '⚠️ ' + a)).filter(Boolean);
+  msg('msgCobro', 'Revisión (todavía no se cobró nada):\n' + lineas.join('\n'), 'warn');
+};
+$('btnCobrar').onclick = async () => {
+  $('btnCobrar').disabled = true;
+  const op = armarOp(); op.esperado = ESPERADO;
+  const r = await api('cobrar', { token: TOKEN, op });
+  if (r.success) {
+    const av = (r.resumen && r.resumen.avisos || []).map(a => '⚠️ ' + a).join('\n');
+    msg('msgCobro', '✅ ' + r.mensaje + (av ? '\n' + av : ''), av ? 'warn' : 'ok');
+    carrito = []; pagos = []; pintar(); nuevoOp();
+  } else {
+    msg('msgCobro', '❌ ' + (r.error || 'No se pudo cobrar.'), 'err');
+    $('btnCobrar').disabled = !!r.definitivo;       // si no es definitivo, Confirmar reintenta con el MISMO número
+  }
+};
+$('btnNuevo').onclick = () => { carrito = []; pagos = []; pintar(); nuevoOp(); $('msgCobro').innerHTML = ''; };
+$('btnCaja').onclick = async () => {
+  const r = await api('getCaja', { token: TOKEN });
+  if (!r.success) return msg('msgConsulta', r.error || 'No se pudo leer la caja.', 'err');
+  const f = o => Object.keys(o || {}).map(k => '· ' + k + ': ' + pesos(o[k])).join('\n') || '· (sin movimientos)';
+  msg('msgConsulta', 'Caja de ' + r.dia + '\nIngresos por medio:\n' + f(r.cajaPorMedio) + '\nVentas por medio:\n' + f(r.ventasPorMedio) + '\nCajón por moneda:\n' + Object.keys(r.cajonPorMoneda || {}).map(k => '· ' + k + ': ' + r.cajonPorMoneda[k]).join('\n'), 'ok');
+};
+$('btnDeuda').onclick = async () => {
+  const r = await api('getDeudaCliente', { token: TOKEN, cliente: $('cli').value.trim(), telefono: $('tel').value.trim() });
+  if (!r.success) return msg('msgConsulta', r.error || 'No se pudo consultar.', 'err');
+  msg('msgConsulta', (r.cliente || 'Cliente') + ' debe ' + pesos(r.deuda) + '\n' + r.fiados.map(x => '· ' + x.idFiado + ': ' + pesos(x.saldo) + ' de ' + pesos(x.original)).join('\n'), 'ok');
+};
+$('btnAnular').onclick = async () => {
+  const idMov = $('idMov').value.trim(), motivo = $('motivo').value.trim();
+  if (!idMov || !motivo) return msg('msgAnular', 'Escribí el IdMov y el motivo. No se anuló nada.', 'warn');
+  const r = await api('anularAbono', { token: TOKEN, opId: 'ANU-' + idMov.replace(/[^A-Za-z0-9_\-]/g, '').slice(0, 56), idMov, motivo });
+  msg('msgAnular', (r.success ? '✅ ' + r.mensaje : '❌ ' + (r.error || 'No se pudo anular.')), r.success ? 'ok' : 'err');
+};
+async function verClientes() {
+  const r = await api('getClientes', { token: TOKEN });
+  if (!r.clientes) return msg('msgClientes', r.error || 'No se pudo leer la lista.', 'err');
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  $('tablaClientes').tBodies[0].innerHTML = r.clientes.map(c => '<tr><td>' + esc(c.nombre) + (c.telefono ? ' · ' + esc(c.telefono) : '') + '</td><td>' + (c.activo ? 'Activo' : 'Desactivado') + '</td><td>' +
+    (c.clienteId ? '<button class="sec" data-acc="' + (c.activo ? 'desactivar' : 'reactivar') + '" data-id="' + esc(c.clienteId) + '">' + (c.activo ? 'Desactivar' : 'Reactivar') + '</button> <button class="sec" data-acc="eliminar" data-id="' + esc(c.clienteId) + '">Eliminar</button>' : '<span class="mut">sin migrar</span>') + '</td></tr>').join('');
+  document.querySelectorAll('[data-acc]').forEach(b => b.onclick = async () => {
+    if (b.dataset.acc === 'eliminar' && !confirm('¿Eliminar este cliente? Solo se puede si no tiene fiados ni pagos.')) return;
+    const x = await api('gestionarCliente', { token: TOKEN, accion: b.dataset.acc, clienteId: b.dataset.id });
+    msg('msgClientes', x.success ? '✅ ' + x.mensaje : (x.tieneHistorial ? '⚠️ ' : '❌ ') + (x.error || 'No se pudo.'), x.success ? 'ok' : (x.tieneHistorial ? 'warn' : 'err'));
+    if (x.success) verClientes();
+  });
+}
+$('btnClientes').onclick = verClientes;
+</script>
+</body>
+</html>
