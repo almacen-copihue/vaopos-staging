@@ -923,6 +923,17 @@ details.ctr-com[open] > summary { border-bottom:1px solid #EEF2F6; }
     </div>
 </div>
 
+<!-- V20: cobro avanzado, cotizaciones y uso de la planilla (backend v042) -->
+<div class="modal-overlay" id="modalCobroV42">
+    <div class="modal" style="max-width:560px;">
+        <div class="modal-titulo">💱 Cobro — <span id="cv42Prefijo"></span></div>
+        <div id="cv42Contenido"><div class="ayuda">Cargando…</div></div>
+        <div class="modal-footer">
+            <button class="btn-cancelar" onclick="cerrarModalCobroV42()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
 <!-- V11: Pruebas y registros (altas automáticas desde planes.html) -->
 <div class="modal-overlay" id="modalRegistros">
     <div class="modal" style="max-width:760px;">
@@ -939,7 +950,7 @@ details.ctr-com[open] > summary { border-bottom:1px solid #EEF2F6; }
 <div class="toast" id="toast"></div>
 
 <script>
-const APP_VERSION = 19;
+const APP_VERSION = 20; // V20: 💱 Cobro por comercio (cobro avanzado prender/apagar, cotizaciones USD/CLP, cobros sin terminar) y uso de la planilla
 document.addEventListener('DOMContentLoaded', function(){
     var tag = document.createElement('span');
     tag.id = 'version-tag';
@@ -1176,6 +1187,9 @@ function renderClientes() {
                         <button class="btn-accion"
                             style="background:#EDE7F6;color:#4527A0;"
                             onclick="abrirModalPlanCliente('${c.prefijo}')">🧩 Plan</button>
+                        <button class="btn-accion"
+                            style="background:#E0F2F1;color:#00695C;"
+                            onclick="abrirModalCobroV42('${c.prefijo}')">💱 Cobro</button>
                     </div>
                 </td>
             </tr>`).join('')}
@@ -2182,6 +2196,47 @@ async function vpRecuperarConfirmar(btn) {
 }
 
 // ── RESET PIN (V9) ──────────────────────────────────────────────────
+// ── V20: COBRO AVANZADO, COTIZACIONES Y USO DE LA PLANILLA ─────────
+let _cv42Prefijo = '';
+async function abrirModalCobroV42(prefijo) {
+    _cv42Prefijo = prefijo;
+    document.getElementById('cv42Prefijo').textContent = prefijo;
+    document.getElementById('modalCobroV42').classList.add('visible');
+    await cargarCobroV42();
+}
+function cerrarModalCobroV42() { document.getElementById('modalCobroV42').classList.remove('visible'); }
+async function cargarCobroV42(msg, tipoMsg) {
+    const cont = document.getElementById('cv42Contenido');
+    cont.innerHTML = '<div class="ayuda">Cargando…</div>';
+    let r = null; try { r = await _adminApi('getEstadoCobro', { prefijo: _cv42Prefijo }); } catch (e) { r = null; }
+    if (!r) { cont.innerHTML = '<div class="ayuda" style="color:var(--rojo);">Sin conexión. No se cambió nada.</div>'; return; }
+    if (r.error) { cont.innerHTML = '<div class="ayuda" style="color:var(--rojo);">' + _esc(r.error) + '</div>'; return; }
+    const c = r.cobro || { avanzado: false, cot: {} }, u = r.usoPlanilla || {};
+    cont.innerHTML =
+        (msg ? '<div class="ayuda" style="background:' + (tipoMsg === 'error' ? '#FFEBEE;color:var(--rojo)' : '#E8F5E9;color:var(--verde)') + ';padding:8px 10px;border-radius:8px;margin-bottom:10px;">' + _esc(msg) + '</div>' : '') +
+        '<div class="form-grupo"><label class="form-label">Cobro avanzado (🔀 Mixto en el POS: varios medios, monedas, fiar lo que falta, vuelto a la deuda)</label>' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><b>' + (c.avanzado ? '🟢 PRENDIDO' : '⚪ APAGADO') + '</b>' +
+        '<button class="btn-accion" style="background:' + (c.avanzado ? '#FFEBEE;color:var(--rojo)' : '#E8F5E9;color:var(--verde)') + ';" onclick="cambiarCobroAvanzadoV42(' + (!c.avanzado) + ')">' + (c.avanzado ? 'Apagar' : 'Prender') + '</button></div>' +
+        (r.migracionPendiente ? '<div class="ayuda" style="color:#E65100;margin-top:6px;">⏳ Este comercio tiene fiados sin pasar al libro: primero usá el menú de la planilla «3. Pasar los fiados de un comercio al libro».</div>' : '') + '</div>' +
+        ['USD', 'CLP'].map(m => '<div class="form-grupo"><label class="form-label">Cotización ' + m + ' (pesos por 1 ' + m + '; vacío = moneda apagada)</label>' +
+            '<div style="display:flex;gap:8px;"><input class="form-input" id="cv42Cot' + m + '" inputmode="decimal" value="' + (c.cot[m] || '') + '" style="max-width:160px;">' +
+            '<button class="btn-accion" style="background:#E3F2FD;color:var(--azul-dark);" onclick="guardarCotizacionV42(\'' + m + '\')">Guardar</button></div></div>').join('') +
+        '<div class="form-grupo"><label class="form-label">Cobros sin terminar de este comercio</label><div class="ayuda">' +
+            ((r.enCurso || []).length ? r.enCurso.map(_esc).join('<br>') + '<br>Se terminan solos cuando el comercio toca Confirmar con el mismo cobro.' : 'Ninguno.') + '</div></div>' +
+        '<div class="form-grupo"><label class="form-label">Uso de la planilla (todos los comercios)</label><div class="ayuda">' +
+            Number(u.celdas || 0).toLocaleString('es-AR') + ' de ' + Number(u.limite || 10000000).toLocaleString('es-AR') + ' celdas (' + (u.porcentaje || 0) + '%) · ' + (u.hojas || 0) + ' hojas' +
+            (u.aviso ? '<br><b style="color:#E65100;">' + _esc(u.aviso) + '</b>' : '') + '</div></div>';
+}
+async function cambiarCobroAvanzadoV42(activo) {
+    let r = null; try { r = await _adminApi('setCobroAvanzado', { prefijo: _cv42Prefijo, activo: activo }); } catch (e) { r = null; }
+    await cargarCobroV42(r ? (r.error || r.mensaje) : 'Sin conexión. No se cambió nada.', r && r.success ? 'ok' : 'error');
+}
+async function guardarCotizacionV42(moneda) {
+    const valor = document.getElementById('cv42Cot' + moneda).value.trim();
+    let r = null; try { r = await _adminApi('setCotizacion', { prefijo: _cv42Prefijo, moneda: moneda, valor: valor }); } catch (e) { r = null; }
+    await cargarCobroV42(r ? (r.error || r.mensaje) : 'Sin conexión. No se cambió nada.', r && r.success ? 'ok' : 'error');
+}
+
 async function resetPin(prefijo, nombre) {
     if (!confirm('¿Resetear el PIN de ' + prefijo + ' (' + (nombre || 'sin nombre') + ')?\n\nSe va a generar un PIN nuevo y el anterior dejará de funcionar.')) return;
 
