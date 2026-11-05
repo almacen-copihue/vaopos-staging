@@ -19,7 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-/* planes.html v2 (STAGING) — página pública de VAO POS. Precios y condiciones vienen del servidor. */
+/* planes.html v3 (STAGING · v043) — página pública. Planes P1/P2, complementos P3 «Armá tu plan». Nombres, prestaciones y precios vienen del servidor (PLANES_VAO y COMPLEMENTOS_VAO). */
 :root {
   --tinta:   #0D47A1;   /* azul VAO oscuro: títulos y texto fuerte */
   --azul:    #1E88E5;   /* azul VAO: acciones */
@@ -95,6 +95,23 @@ ul.hace b { color: var(--tinta); }
 .mods { margin: 10px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
 .mods li { background: #EEF4FB; color: var(--tinta); border-radius: 8px; padding: 2px 9px; font-size: .88rem; }
 .estado-carga { background: #fff; border-radius: var(--radio); padding: 18px; color: var(--suave); }
+/* v3: elegir plan y complementos */
+.plan.elegible { cursor: pointer; position: relative; }
+.plan.elegible:hover { border-color: var(--azul); }
+.plan.elegido { border-color: var(--azul); box-shadow: 0 0 0 3px #CFE3FA; }
+.plan .grupo { display: inline-block; background: var(--tinta); color: #fff; border-radius: 6px; padding: 1px 7px; font-size: .78rem; font-weight: 700; margin-right: 6px; }
+.plan .elegir { margin-top: 12px; display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--tinta); }
+.plan .elegir input { width: 22px; height: 22px; margin: 0; }
+.mods li.base { background: #F1F1F1; color: #333; }
+.mods li.g2 { background: #E3EEFB; }
+.comp { background: #fff; border: 2px solid var(--borde); border-radius: var(--radio); padding: 14px 16px; display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; margin-bottom: 10px; }
+.comp input { width: 24px; height: 24px; margin: 3px 0 0; }
+.comp.no { opacity: .55; }
+.comp b { color: var(--tinta); }
+.resumen { background: #fff; border: 2px solid var(--tinta); border-radius: var(--radio); padding: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .95rem; }
+.resumen .linea { display: flex; justify-content: space-between; gap: 10px; }
+.resumen .total { border-top: 2px dashed #888; margin-top: 8px; padding-top: 8px; font-weight: 600; font-size: 1.05rem; }
+.resumen .cond { font-family: 'Atkinson Hyperlegible', sans-serif; font-size: .9rem; color: var(--suave); margin-top: 10px; }
 
 /* ── registro ───────────────────────────────────────── */
 #empezar { background: #fff; }
@@ -146,7 +163,7 @@ footer { padding: 26px 0 40px; font-size: .88rem; color: var(--suave); }
     <div class="ranura" aria-hidden="true"></div>
     <div class="ticket" role="img" aria-label="Prueba gratis de 7 días, más 3 días de gracia, total 0 pesos, sin tarjeta de crédito">
       <div class="t-tit">PROBALO GRATIS 7 DÍAS</div>
-      <div class="t-sub">Todas las funciones disponibles</div>
+      <div class="t-sub" id="tSub">Todas las funciones disponibles</div>
       <div class="linea"><span>Prueba completa</span><span></span><span><span id="tDias">7</span> días</span></div>
       <div class="linea"><span>Días de gracia</span><span></span><span>+ <span id="tGracia">3</span></span></div>
       <div class="linea"><span>Tarjeta de crédito</span><span></span><span>no</span></div>
@@ -180,6 +197,19 @@ footer { padding: 26px 0 40px; font-size: .88rem; color: var(--suave); }
     <h2>Planes</h2>
     <div id="planes" class="planes"><div class="estado-carga">Cargando los planes…</div></div>
     <p class="chico" id="notaPlanes" style="margin-top:12px;">Los precios son mensuales, en pesos argentinos. Para pasar a un plan pago, VAO Sistemas te envía el contrato y sus condiciones antes de cobrarte.</p>
+  </div>
+</section>
+
+<!-- v3: P3 · Armá tu plan (complementos que se suman a P1 o P2) + resumen de la elección -->
+<section id="armaTuPlan" class="oculto" style="padding-top:8px;">
+  <div class="col">
+    <h2>Armá tu plan</h2>
+    <p>Elegí tu plan base (arriba) y sumale los complementos que necesites. Los complementos no son un plan aparte: se agregan a P1 Esencial o a P2 Gestión.</p>
+    <div id="complementos"></div>
+    <h3 style="margin:18px 0 8px;">Tu elección</h3>
+    <div class="resumen" id="resumen" aria-live="polite"></div>
+    <div id="msgEleccion" class="msg oculto" role="status" aria-live="polite" style="margin-top:12px;"></div>
+    <a class="btn btn-principal" href="#empezar" style="margin-top:14px;">Empezar con la prueba gratis</a>
   </div>
 </section>
 
@@ -247,7 +277,9 @@ footer { padding: 26px 0 40px; font-size: .88rem; color: var(--suave); }
     <details><summary>¿Los datos son míos?</summary><p>Sí. Podés descargar tus registros hoja por hoja desde el primer día. Nadie más ve los datos de tu comercio.</p></details>
     <details><summary>¿Tengo que instalar algo?</summary><p>No. Se usa desde el navegador del celular o de la computadora.</p></details>
     <details><summary>¿Puedo probarlo más de una vez?</summary><p>No. La prueba gratis es una sola vez por comercio, teléfono o correo.</p></details>
-    <details><summary>¿Cómo paso a un plan pago?</summary><p>Elegís el plan, VAO Sistemas te envía el contrato y las condiciones, y recién después pagás por transferencia o Mercado Pago.</p></details>
+    <details><summary>¿Cómo paso a un plan pago?</summary><p>Elegís el plan (y los complementos, si querés) acá arriba y empezás con la prueba gratis. Tu elección queda anotada. Al terminar la prueba, VAO Sistemas te envía el contrato y las condiciones; el plan se activa cuando VAO Sistemas confirma tu pago (transferencia o Mercado Pago).</p></details>
+    <details><summary>¿Qué diferencia hay entre P1 y P2?</summary><p>P1 Esencial tiene lo del día a día: ventas, caja del día, ingreso de mercadería y fiado sencillo (se fía la compra completa y se cobra completa). P2 Gestión suma ajuste de stock, revisión de inventario, reportes y la gestión completa de fiados: pagos parciales, ficha de cada cliente, cobros recientes y anulaciones.</p></details>
+    <details><summary>¿Puedo cambiar de plan después?</summary><p>Sí. El cambio se hace al renovar, cuando VAO Sistemas registra el pago del plan nuevo. Tus ventas, fiados y pagos nunca se borran al cambiar de plan.</p></details>
   </div>
 </section>
 
@@ -270,12 +302,17 @@ footer { padding: 26px 0 40px; font-size: .88rem; color: var(--suave); }
 <footer><div class="col">VAO POS es un servicio de VAO Sistemas. Página de pruebas (STAGING).</div></footer>
 
 <script>
-// planes.html v1 — STAGING. Todo lo comercial (precios, oferta, condiciones, cupos) lo decide el servidor.
+// planes.html v3 (v043) — STAGING. Todo lo comercial (precios, oferta, condiciones, cupos) lo decide el servidor.
 const API_URL = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
 const URL_PUBLICA = location.origin + location.pathname;
 const LS_SOL = 'vao_registro_solicitud';
 const T0 = Date.now();
 let CONDICIONES = null, solicitudId = null, reenviarTimer = null;
+// v3: catálogo P1/P2/P3 y elección (se guarda en este teléfono y se anota en el servidor junto a la solicitud de prueba)
+const LS_ELEC = 'vao_eleccion_plan';
+let CATALOGO = null, PLANES = [], PROMO = null, ELECCION = { plan: '', complementos: [] };
+try { const e = JSON.parse(localStorage.getItem(LS_ELEC) || 'null'); if (e && typeof e.plan === 'string' && Array.isArray(e.complementos)) ELECCION = e; } catch (e) {}
+function guardarEleccion() { try { localStorage.setItem(LS_ELEC, JSON.stringify(ELECCION)); } catch (e) {} }
 
 const $ = id => document.getElementById(id);
 const pesos = n => '$' + Number(n).toLocaleString('es-AR');
@@ -326,13 +363,100 @@ function htmlPlan(p, promo) {
   return '<div class="plan"><div class="plan-cab"><h3>' + esc(p.nombre) + '</h3></div>' + precio + mods + '</div>';
 }
 
+// ── v3: P1 / P2 elegibles y P3 complementos ─────────────────────────
+const BASE_SIEMPRE = ['Ventas con efectivo, transferencia, débito, crédito o Mercado Pago (un medio por venta)', 'Mis datos: descargar tus registros e historial de cambios'];
+function precioTxt(reg, lanz, conPromo) {
+  if (reg === null || reg === undefined) return 'Precio a confirmar';
+  return (conPromo && PROMO && lanz !== null && lanz !== undefined) ? pesos(lanz) + '/mes (lanzamiento; luego ' + pesos(reg) + ')' : pesos(reg) + '/mes';
+}
+function precioNum(reg, lanz, conPromo) { if (reg === null || reg === undefined) return null; return (conPromo && PROMO && lanz !== null && lanz !== undefined) ? Number(lanz) : Number(reg); }
+function htmlPlanV3(p) {
+  const pres = (p.prestaciones || []).filter(x => x.grupo !== 'P3');
+  const items = BASE_SIEMPRE.map(t => '<li class="base">' + esc(t) + '</li>').join('') +
+    pres.map(x => '<li class="' + (x.grupo === 'P2' ? 'g2' : '') + '"><span class="grupo">' + esc(x.grupo) + '</span>' + esc(x.nombre) + '</li>').join('');
+  const grupo = p.codigo === 'PRO' ? 'P2' : 'P1';
+  const el = ELECCION.plan === p.codigo;
+  let precio;
+  if (p.precioRegular === null || p.precioRegular === undefined) precio = '<div class="lineas-precio chico">Precio a confirmar.</div>';
+  else if (p.conPromo && PROMO) precio = '<span class="oferta">🚀 OFERTA DE LANZAMIENTO</span><div class="lineas-precio"><div><span>Precio regular</span><span>' + pesos(p.precioRegular) + '/mes</span></div><div><b>Precio de lanzamiento</b><b>' + pesos(p.precioLanzamiento) + '/mes</b></div><div class="chico">Durante los primeros ' + PROMO.meses + ' meses de la contratación paga.</div></div>';
+  else precio = '<div class="lineas-precio"><div><span>Precio</span><b>' + pesos(p.precioRegular) + '/mes</b></div></div>';
+  return '<div class="plan elegible' + (el ? ' elegido' : '') + '" data-plan="' + esc(p.codigo) + '"><div class="plan-cab"><h3><span class="grupo">' + grupo + '</span>' + esc(p.nombre) + '</h3></div>' + precio +
+    (p.codigo === 'PRO' ? '<div class="chico" style="margin-top:6px;">Todo lo de P1 Esencial, más:</div>' : '') +
+    '<ul class="mods">' + items + '</ul>' +
+    '<label class="elegir"><input type="radio" name="planElegido" value="' + esc(p.codigo) + '"' + (el ? ' checked' : '') + '> Elegir ' + esc(p.nombre) + '</label></div>';
+}
+function pintarPlanesV3() {
+  const prueba = PLANES.find(p => p.codigo === 'PRUEBA');
+  const pagos = PLANES.filter(p => p.codigo === 'BASICO' || p.codigo === 'PRO');
+  const otros = PLANES.filter(p => ['PRUEBA', 'BASICO', 'PRO'].indexOf(p.codigo) === -1);
+  let h = '';
+  if (prueba) {
+    const g = [...new Set((prueba.prestaciones || []).map(x => x.grupo))].sort().join(' + ');
+    h += '<div class="plan gratis"><div class="plan-cab"><h3>' + esc(prueba.nombre) + '</h3><div class="precio">Gratis</div></div><div class="lineas-precio">' + esc($('tDias').textContent) + ' días + ' + esc($('tGracia').textContent) + ' de gracia. Incluye ' + esc(g || 'todo') + '.</div></div>';
+  }
+  h += pagos.map(htmlPlanV3).join('') + otros.map(p => htmlPlan(p, PROMO)).join('') + (PROMO ? '<p class="chico">' + esc(PROMO.condiciones) + '</p>' : '');
+  $('planes').innerHTML = h;
+  $('planes').querySelectorAll('.plan.elegible').forEach(card => card.addEventListener('click', ev => {
+    const cod = card.dataset.plan; if (ELECCION.plan === cod && ev.target.tagName !== 'INPUT') return;
+    ELECCION.plan = cod; guardarEleccion(); pintarPlanesV3(); pintarComplementos(); if (solicitudId) anotarEleccion(false);
+  }));
+}
+function pintarComplementos() {
+  const lista = (CATALOGO && CATALOGO.complementos) || [];
+  const box = $('complementos');
+  if (!lista.length) { box.innerHTML = '<p class="chico">Por ahora no hay complementos para sumar.</p>'; }
+  else box.innerHTML = lista.map(c => {
+    const ok = !ELECCION.plan || c.planesBase.indexOf(ELECCION.plan) !== -1;
+    const mar = ok && ELECCION.complementos.indexOf(c.clave) !== -1;
+    return '<label class="comp' + (ok ? '' : ' no') + '"><input type="checkbox" data-comp="' + esc(c.clave) + '"' + (mar ? ' checked' : '') + (ok ? '' : ' disabled') + '>' +
+      '<span><span class="grupo" style="background:#2E8B1E;color:#fff;border-radius:6px;padding:1px 7px;font-size:.78rem;font-weight:700;margin-right:6px;">P3</span><b>' + esc(c.nombre) + '</b> · ' + esc(precioTxt(c.precioRegular, c.precioLanzamiento, !!PROMO)) +
+      '<br><span class="chico">' + esc(c.descripcion) + '</span>' + (ok ? '' : '<br><span class="chico">No disponible para el plan elegido.</span>') + '</span></label>';
+  }).join('');
+  // un complemento que no corresponde al plan elegido se quita de la elección
+  ELECCION.complementos = ELECCION.complementos.filter(k => lista.some(c => c.clave === k && (!ELECCION.plan || c.planesBase.indexOf(ELECCION.plan) !== -1)));
+  guardarEleccion();
+  box.querySelectorAll('input[data-comp]').forEach(i => i.addEventListener('change', () => {
+    const k = i.dataset.comp; ELECCION.complementos = ELECCION.complementos.filter(x => x !== k); if (i.checked) ELECCION.complementos.push(k);
+    guardarEleccion(); pintarResumen(); if (solicitudId) anotarEleccion(false);
+  }));
+  pintarResumen();
+}
+function pintarResumen() {
+  const r = $('resumen');
+  const p = PLANES.find(x => x.codigo === ELECCION.plan);
+  if (!p) { r.innerHTML = '<div>Todavía no elegiste un plan base. Tocá P1 Esencial o P2 Gestión.</div><div class="cond">Igual podés empezar la prueba gratis: el plan se elige antes de pagar.</div>'; return; }
+  const comps = ((CATALOGO && CATALOGO.complementos) || []).filter(c => ELECCION.complementos.indexOf(c.clave) !== -1);
+  let total = precioNum(p.precioRegular, p.precioLanzamiento, p.conPromo);
+  comps.forEach(c => { const n = precioNum(c.precioRegular, c.precioLanzamiento, !!PROMO); total = (total === null || n === null) ? null : total + n; });
+  const lin = (a, b) => '<div class="linea"><span>' + esc(a) + '</span><span>' + esc(b) + '</span></div>';
+  r.innerHTML = lin(p.nombre, precioTxt(p.precioRegular, p.precioLanzamiento, p.conPromo)) + comps.map(c => lin('+ ' + c.nombre, precioTxt(c.precioRegular, c.precioLanzamiento, !!PROMO))).join('') +
+    '<div class="linea total"><span>TOTAL MENSUAL</span><span>' + (total === null ? 'a confirmar' : pesos(total)) + '</span></div>' +
+    '<div class="cond">Empezás con la prueba gratis (sin tarjeta). Tu elección queda anotada con tu solicitud. Al terminar la prueba, VAO Sistemas te envía el contrato con estas condiciones y el plan se activa cuando confirma tu pago. ' +
+    (total === null ? 'Algún precio todavía no está publicado: te lo confirmamos antes de cobrar. ' : '') + 'Podés cambiar la elección cuando quieras antes de pagar.</div>';
+}
+async function anotarEleccion(silencioso) {
+  if (!solicitudId || !ELECCION.plan || !CATALOGO) return;
+  try {
+    const r = await api('registrarInteresPlan', { solicitudId, plan: ELECCION.plan, complementos: ELECCION.complementos });
+    if (!silencioso) { const m = $('msgEleccion'); m.className = 'msg ' + (r.success ? 'ok' : 'info'); m.textContent = r.success ? r.mensaje : (r.error || 'No se pudo anotar la elección.'); }
+  } catch (e) { /* no frena la prueba */ }
+}
+
 async function cargarPlanes() {
   try {
     const r = await api('getPlanesPublicos', {});
     if (!r.success) throw new Error(r.error || 'sin datos');
     $('tDias').textContent = r.prueba.dias; $('tGracia').textContent = r.prueba.gracia;
-    $('planes').innerHTML = r.planes.map(p => htmlPlan(p, r.promo)).join('') +
-      (r.promo ? '<p class="chico">' + esc(r.promo.condiciones) + '</p>' : '');
+    PLANES = r.planes; PROMO = r.promo;
+    CATALOGO = (r.catalogoV043 && r.catalogoV043.migrado) ? r.catalogoV043 : null;   // servidor anterior o planes sin migrar: como antes
+    if (CATALOGO) {
+      if (ELECCION.plan && !PLANES.some(p => p.codigo === ELECCION.plan)) ELECCION.plan = '';
+      const pr = PLANES.find(p => p.codigo === 'PRUEBA'); if (pr && pr.prestaciones) $('tSub').textContent = 'Incluye ' + [...new Set(pr.prestaciones.map(x => CATALOGO.grupos[x.grupo] || x.grupo))].join(' + ');
+      pintarPlanesV3(); $('armaTuPlan').classList.remove('oculto'); pintarComplementos();
+    } else {
+      $('planes').innerHTML = r.planes.map(p => htmlPlan(p, r.promo)).join('') +
+        (r.promo ? '<p class="chico">' + esc(r.promo.condiciones) + '</p>' : '');
+    }
     CONDICIONES = r.condicionesPrueba;
     $('condiciones').textContent = CONDICIONES.texto;
     if (r.inscripcion === 'LISTA_ESPERA') {
@@ -380,6 +504,7 @@ $('formDatos').addEventListener('submit', async ev => {
     if (r.success && r.solicitudId && !r.listaEspera && !r.yaCreado) {
       solicitudId = r.solicitudId; guardarSol(solicitudId);
       $('textoCodigo').textContent = r.mensaje; paso(2); iniciarReenvio(); $('codigo').focus();
+      anotarEleccion(false);
     } else if (r.success) { guardarSol(r.solicitudId); mostrarResultado(r); }
     else { mensaje(r.error || 'No pudimos enviar el código.', 'error'); marcar(r.campo || null); }
   } catch (e) { mensaje('Sin conexión. Revisá internet y volvé a intentar.', 'error'); }
@@ -393,7 +518,7 @@ $('formCodigo').addEventListener('submit', async ev => {
   const btn = $('btnConfirmar'); btn.disabled = true; btn.textContent = 'Creando tu prueba…'; mensaje('');
   try {
     const r = await api('registroConfirmar', { solicitudId, codigo: cod });
-    if (r.success) mostrarResultado(r);
+    if (r.success) { mostrarResultado(r); anotarEleccion(true); }
     else {
       mensaje(r.error || 'No pudimos verificar el código.', 'error');
       if (r.codigoVencido) { $('btnReenviar').disabled = false; $('btnReenviar').textContent = 'Pedir un código nuevo'; }
@@ -427,6 +552,7 @@ async function retomar() {
     const r = await api('registroEstado', { solicitudId: id });
     if (r.error && !r.enRevision) { if (!q) guardarSol(null); else mensaje(r.error, 'error'); return; }
     solicitudId = id;
+    anotarEleccion(true);
     if (r.enRevision) { mensaje(r.error, 'info'); return; }
     if (r.esperaCodigo) {
       paso(2); $('textoCodigo').textContent = r.mensaje;

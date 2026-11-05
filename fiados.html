@@ -196,6 +196,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--blanco); color:var(--t
         <div class="form-grupo">
             <label class="form-label">Monto a pagar</label>
             <input type="number" class="form-input" id="pagoMonto" min="0">
+            <div id="pagoNotaPlan" style="display:none;font-size:0.78rem;color:#6A1B9A;margin-top:4px;">Fiado sencillo (P1 Esencial): se cobra la deuda completa. Los pagos parciales están en P2 Gestión.</div>
         </div>
         <div class="form-grupo">
             <label class="form-label">Método de pago</label>
@@ -226,7 +227,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--blanco); color:var(--t
 </div>
 
 <script>
-const APP_VERSION = 6; // V6: ficha del cliente (desactivar, reactivar, eliminar sin historial) y 📜 Cobros recientes con Anular (motivo obligatorio, sin duplicar) · V5: junta en una tarjeta al mismo cliente aunque cambien tildes, mayúsculas o espacios (motor v040.6)
+const APP_VERSION = 7; // V7 (v043): según el plan — P1 Esencial = fiado sencillo (se cobra la deuda completa; sin pagos parciales, ficha ni cobros recientes); P2 Gestión = gestión completa. Lo decide el servidor · V6: ficha del cliente (desactivar, reactivar, eliminar sin historial) y 📜 Cobros recientes con Anular (motivo obligatorio, sin duplicar) · V5: junta en una tarjeta al mismo cliente aunque cambien tildes, mayúsculas o espacios (motor v040.6)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
 
 // Mismo esquema seguro que ya usan pos.html y reportes.html — sin sesión
@@ -266,12 +267,18 @@ let metodoPagoActual = 'efectivo';
 let ultimoComprobante = '';
 
 // ========== ARRANQUE ==========
+// V7 (v043): gestión completa de fiados (P2) o fiado sencillo (P1). Con un servidor anterior: gestión completa, como V6.
+let GESTION_FIADOS = true;
+async function leerPlanFiados() {
+    try { const c = await _api('getConfig', {}); if (c && c.prestaciones && c.prestaciones.modulos && c.prestaciones.modulos.extra_fiados_gestion === false) GESTION_FIADOS = false; } catch (e) {}
+}
 async function init() {
     if (!PREFIJO || !_tokenActual()) {
         document.getElementById('appContent').innerHTML =
             '<div class="loading" style="color:var(--rojo);">❌ Sesión no encontrada. Volvé a entrar desde el POS.</div>';
         return;
     }
+    await leerPlanFiados(); // V7
     await cargarListaClientes();
     verificarPagoPendiente(); // V2
 }
@@ -405,6 +412,10 @@ function renderDetalleCliente(data) {
             '</div>';
         });
     }
+    if (!GESTION_FIADOS) { // V7: P1 Esencial
+        html += '<div class="ficha" id="fichaSencillo"><div class="mov-meta">🧾 <b>Fiado sencillo</b> (P1 Esencial): tocá un fiado para cobrarlo completo. Los pagos parciales, la ficha del cliente y los cobros recientes están en <b>P2 Gestión</b>.</div></div>';
+        html += '</div>'; cont.innerHTML = html; return;
+    }
     html += '<div class="ficha" id="fichaCliente"><div class="mov-meta">Cargando ficha del cliente…</div></div>'; // V6
     html += '</div>';
     cont.innerHTML = html;
@@ -486,7 +497,9 @@ function abrirModalPago(idFiado) {
         const b = _leerBorradorPago();
         if (b && b.idFiado === idFiado) { document.getElementById('pagoMonto').value = b.monto; seleccionarMetodoPago(b.metodo || 'efectivo'); }
     }
-    document.getElementById('pagoMonto').readOnly = esEste;
+    document.getElementById('pagoMonto').readOnly = esEste || !GESTION_FIADOS;
+    if (!GESTION_FIADOS && !esEste) document.getElementById('pagoMonto').value = fiadoSeleccionado.totalPendiente; // V7: fiado sencillo = se cobra completo
+    const nota = document.getElementById('pagoNotaPlan'); if (nota) nota.style.display = GESTION_FIADOS ? 'none' : 'block';
     document.getElementById('pagoPendienteAviso').style.display = esEste ? 'block' : 'none';
     document.getElementById('btnConfirmarPago').disabled = false;
     document.getElementById('btnConfirmarPago').textContent = '✅ Confirmar pago';
@@ -552,7 +565,7 @@ async function confirmarPago() {
             await abrirClienteRefresh();
             abrirComprobante();
         } else {
-            if (resp.definitivo) { _borrarPagoPendiente(); await abrirClienteRefresh(); } // p. ej. ya estaba saldado: no se escribió nada
+            if (resp.definitivo || resp.moduloNoHabilitado) { _borrarPagoPendiente(); await abrirClienteRefresh(); } // V7: módulo no habilitado = no se escribió nada // p. ej. ya estaba saldado: no se escribió nada
             errDiv.textContent = '❌ ' + (resp.error || resp.mensaje || 'Error al registrar el pago') +
                 (resp.definitivo ? '' : ' — el pago quedó guardado: Confirmar lo reintenta sin duplicar.');
             errDiv.style.display = 'block';

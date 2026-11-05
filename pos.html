@@ -163,9 +163,51 @@ body {
     .toolbar { padding: 6px 6px; gap: 4px; }
     .btn-tool { flex-direction: column; gap: 1px; padding: 5px 2px; border-radius: 12px; font-size: 0.6rem; letter-spacing: 0; line-height: 1.1; min-width: 0; }
     .btn-tool .ico { font-size: 1rem; }
-    #btnMiPlan { flex: 0 0 34px; } #btnMiPlan .txt { display: none; } /* V29: en celular, solo el ícono (no achica los demás botones) */
+
 }
 .btn-tool .txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+/* ===== V41: TARJETAS POR PLAN (P1 · Esencial / P2 · Gestión / P3 · Complementos) ===== */
+.planes-pos { background: #0A2472; padding: 8px 10px 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; flex-shrink: 0; }
+.tarjeta-plan { flex: 1 1 260px; min-width: 0; background: #fff; border-radius: 14px; padding: 7px 8px 8px; display: flex; flex-direction: column; gap: 6px;
+                border-top: 4px solid var(--tp-color); box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.tarjeta-plan[data-plan="P1"] { --tp-color: #1E88E5; --tp-fondo: #E3F2FD; --tp-tinta: #0D47A1; }
+.tarjeta-plan[data-plan="P2"] { --tp-color: #7E57C2; --tp-fondo: #EDE7F6; --tp-tinta: #4527A0; }
+.tarjeta-plan[data-plan="P3"] { --tp-color: #2E8B57; --tp-fondo: #E8F5E9; --tp-tinta: #1B5E20; }
+.tp-cab { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tp-sello { flex: 0 0 auto; background: var(--tp-color); color: #fff; font-weight: 800; font-size: .78rem; border-radius: 8px; padding: 3px 7px; letter-spacing: .3px; }
+.tp-titulo { font-size: .86rem; font-weight: 800; color: var(--tp-tinta); line-height: 1.1; margin: 0; }
+.tp-desc { font-size: .68rem; color: #5f6b7a; line-height: 1.15; margin: 1px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-cab > div { min-width: 0; }
+.tp-botones { display: flex; gap: 6px; }
+.tarjeta-plan .btn-tool { flex: 1 1 0; min-width: 0; min-height: 44px; background: var(--tp-fondo); color: var(--tp-tinta); border-radius: 10px;
+                          flex-direction: column; gap: 1px; padding: 5px 3px; font-size: .7rem; letter-spacing: 0; line-height: 1.1; }
+.tarjeta-plan .btn-tool .ico { font-size: 1.05rem; }
+.tarjeta-plan .btn-tool:active { filter: brightness(.94); }
+.tarjeta-plan .btn-tool:focus-visible, .btn-cuenta:focus-visible { outline: 2px solid var(--tp-color, #fff); outline-offset: 2px; }
+.planes-cuenta { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.btn-cuenta { border: none; border-radius: 12px; background: rgba(255,255,255,.16); color: #fff; font-weight: 800; font-family: inherit; font-size: .74rem;
+              padding: 8px 10px; min-height: 40px; cursor: pointer; white-space: nowrap; }
+.btn-cuenta.salir { background: rgba(214,66,66,.55); }
+@media (min-width: 600px) and (max-width: 1099px) {   /* tablet: hasta dos tarjetas por fila; Mi plan y Salir en una fila aparte */
+    .tarjeta-plan { flex: 1 1 340px; }
+    .planes-cuenta { flex: 1 0 100%; flex-direction: row; justify-content: flex-end; }
+    .btn-cuenta { min-height: 36px; padding: 6px 14px; }
+}
+@media (max-width: 599px) {   /* celular: tarjetas una debajo de otra, compactas */
+    .planes-pos { flex-direction: column; gap: 6px; padding: 6px 8px 8px; }
+    .tarjeta-plan { flex: 0 0 auto; padding: 6px 7px 7px; gap: 5px; }
+    .tp-cab { gap: 6px; }
+    .tp-cab > div { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+    .tp-titulo { flex: 0 0 auto; font-size: .82rem; }
+    .tp-desc { font-size: .66rem; margin: 0; }
+    .tp-botones { gap: 5px; }
+    .tarjeta-plan .btn-tool { min-height: 46px; font-size: .66rem; }
+    .planes-cuenta { flex-direction: row; justify-content: flex-end; }
+    .btn-cuenta { min-height: 34px; padding: 5px 12px; }
+}
+.mp-grupo { font-weight: 800; font-size: 0.8rem; color: #0A2472; margin: 10px 0 4px; }
+.mp-chip { display: inline-block; background: #EEF4FB; color: #0A2472; border-radius: 8px; padding: 3px 8px; font-size: 0.8rem; margin: 0 4px 4px 0; }
+.mp-chip.off { background: #FFEBEE; color: #B71C1C; }
 /* V22 (P3): filtro por categoría en la lista ☰ */
 .chips-cat { display:flex; gap:6px; overflow-x:auto; padding:8px 10px; border-bottom:1px solid #f0ecf7; position:sticky; top:0; background:white; z-index:1; }
 .chip-cat { flex:0 0 auto; padding:6px 12px; border-radius:16px; border:1.5px solid var(--lavanda-light); background:white; font-size:0.75rem; font-weight:700; color:var(--lavanda-dark); cursor:pointer; white-space:nowrap; }
@@ -760,15 +802,38 @@ body {
 
 <!-- TOOLBAR -->
 <div id="avisoPrueba" style="display:none;"></div>
-<div class="toolbar">
-    <button class="btn-tool ingreso" id="btnIngreso" onclick="abrirIngreso()"><span class="ico">📦</span><span class="txt">Ingresar</span></button>
-    <button class="btn-tool ajuste" id="btnAjuste" onclick="abrirAjuste()"><span class="ico">✏️</span><span class="txt">Ajustar</span></button>
-    <button class="btn-tool hoy" id="btnHoy" onclick="abrirResumen()"><span class="ico">📋</span><span class="txt">Hoy</span></button>
-    <button class="btn-tool stats" id="btnReportes" onclick="window.location.href='reportes.html?p='+PREFIJO"><span class="ico">📊</span><span class="txt">Reportes</span></button>
-    <button class="btn-tool fiados" id="btnFiados" onclick="window.location.href='fiados.html?p='+PREFIJO"><span class="ico">🧾</span><span class="txt">Fiados</span></button>
-    <button class="btn-tool datos" id="btnMisDatos" onclick="abrirMisDatos()"><span class="ico">📥</span><span class="txt">Mis datos</span></button>
-    <button class="btn-tool datos" id="btnMiPlan" onclick="abrirPagoPlan()" title="Mi plan" aria-label="Mi plan"><span class="ico">💳</span><span class="txt">Mi plan</span></button>
-    <button class="btn-tool cerrar" onclick="confirmarSalir()"><span class="ico">🚪</span><span class="txt">Salir</span></button>
+<!-- V41 (v043): funciones en tarjetas por plan comercial. Se muestran solo las contratadas y habilitadas
+     (lo decide el servidor en getConfig.prestaciones); el servidor igual controla cada acción. -->
+<div class="planes-pos" id="planesPos">
+    <section class="tarjeta-plan" id="tarjetaP1" data-plan="P1" aria-labelledby="tituloP1">
+        <div class="tp-cab"><span class="tp-sello">P1</span><div><h2 class="tp-titulo" id="tituloP1">Esencial</h2><p class="tp-desc">Mercadería, caja y fiado del día</p></div></div>
+        <div class="tp-botones">
+            <button class="btn-tool ingreso" id="btnIngreso" onclick="abrirIngreso()"><span class="ico">📦</span><span class="txt">Ingresar</span></button>
+            <button class="btn-tool hoy" id="btnHoy" onclick="abrirResumen()"><span class="ico">📋</span><span class="txt">Hoy</span></button>
+            <button class="btn-tool fiados" id="btnFiados" onclick="window.location.href='fiados.html?p='+PREFIJO"><span class="ico">🧾</span><span class="txt">Fiados</span></button>
+            <button class="btn-tool datos" id="btnMisDatos" onclick="abrirMisDatos()"><span class="ico">📥</span><span class="txt">Mis datos</span></button>
+        </div>
+    </section>
+    <section class="tarjeta-plan" id="tarjetaP2" data-plan="P2" aria-labelledby="tituloP2">
+        <div class="tp-cab"><span class="tp-sello">P2</span><div><h2 class="tp-titulo" id="tituloP2">Gestión</h2><p class="tp-desc">Stock, reportes y clientes</p></div></div>
+        <div class="tp-botones">
+            <button class="btn-tool ajuste" id="btnAjuste" onclick="abrirAjuste()"><span class="ico">✏️</span><span class="txt">Ajustar</span></button>
+            <button class="btn-tool inventario" id="btnInventarioP2" onclick="abrirRevisionInventarioV41()"><span class="ico">✔️</span><span class="txt">Inventario</span></button>
+            <button class="btn-tool stats" id="btnReportes" onclick="window.location.href='reportes.html?p='+PREFIJO"><span class="ico">📊</span><span class="txt">Reportes</span></button>
+            <button class="btn-tool clientes" id="btnClientesP2" onclick="window.location.href='fiados.html?p='+PREFIJO"><span class="ico">👥</span><span class="txt">Clientes</span></button>
+        </div>
+    </section>
+    <section class="tarjeta-plan" id="tarjetaP3" data-plan="P3" aria-labelledby="tituloP3">
+        <div class="tp-cab"><span class="tp-sello">P3</span><div><h2 class="tp-titulo" id="tituloP3">Complementos</h2><p class="tp-desc">Cobro avanzado: varios medios y monedas</p></div></div>
+        <div class="tp-botones">
+            <button class="btn-tool mixto" id="btnCobroAvanzado" onclick="abrirCobroAvanzadoV41()"><span class="ico">🔀</span><span class="txt">Cobro mixto</span></button>
+            <button class="btn-tool monedas" id="btnCotizaciones" onclick="verCotizacionesV41()"><span class="ico">💱</span><span class="txt">Cotizaciones</span></button>
+        </div>
+    </section>
+    <div class="planes-cuenta">
+        <button class="btn-cuenta" id="btnMiPlan" onclick="abrirPagoPlan()" title="Mi plan" aria-label="Mi plan">💳 <span>Mi plan</span></button>
+        <button class="btn-cuenta salir" onclick="confirmarSalir()" aria-label="Salir">🚪 <span>Salir</span></button>
+    </div>
 </div>
 
 <!-- BUSCADOR -->
@@ -1062,7 +1127,7 @@ if (!/^[A-Z0-9]{2,10}$/.test(PREFIJO)) {
 
 // ========== CONFIG ==========
 const API_URL  = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
-const APP_VERSION = 39; // V39: 🔀 Mixto (solo si VAO prende el cobro avanzado): varios medios, monedas, vuelto, fiar lo que falta o cobrar deuda, con Revisar antes de cobrar y reintento sin duplicar; Hoy muestra la caja del servidor (todos los equipos); Mis datos → ✔️ Revisar inventario (solo lectura) · V38: al fiar avisa si el cliente ya debe (solo lectura, no bloquea) · V37: sin 🏠 en el encabezado (cerraba la sesión); Salir pide confirmación; '¿Perdiste o te robaron el celular?' en la pantalla del PIN · V36: PIN oculto ●●●●●● con 👁️; 📣 Compartir con el afiche (menú del celular: elegís WhatsApp Business); PIN: cierra el teclado y muestra ⏳ Verificando visible arriba; aviso único de versión nueva · V35: 📣 comparte planes.html?v=N (WhatsApp guarda la vista previa vieja de un link ya enviado) · V34: botón 💬 Soporte por WhatsApp a VAO Sistemas (encabezado y pantalla del PIN) · V33: app instalable (manifest + service worker sin copias) y recuerda el último comercio · V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
+const APP_VERSION = 41; // V41 (v043): las funciones se muestran en TARJETAS por plan — P1 · Esencial, P2 · Gestión y P3 · Complementos — cada una con título, descripción y sus botones; solo las contratadas (sin tarjetas vacías ni botones bloqueados); en celular se apilan · V40 (v043): la barra se arma por plan — P1 Esencial (Ingresar, Hoy, Fiados) y P2 Gestión (Ajustar, Reportes) en grupos; se ve solo lo contratado y habilitado; 🔀 Mixto solo con el complemento Cobro avanzado; ✔️ Revisar inventario solo con P2; 💳 Mi plan muestra tu plan, complementos y vencimiento y permite pedir cambios por WhatsApp · V39: 🔀 Mixto (solo si VAO prende el cobro avanzado): varios medios, monedas, vuelto, fiar lo que falta o cobrar deuda, con Revisar antes de cobrar y reintento sin duplicar; Hoy muestra la caja del servidor (todos los equipos); Mis datos → ✔️ Revisar inventario (solo lectura) · V38: al fiar avisa si el cliente ya debe (solo lectura, no bloquea) · V37: sin 🏠 en el encabezado (cerraba la sesión); Salir pide confirmación; '¿Perdiste o te robaron el celular?' en la pantalla del PIN · V36: PIN oculto ●●●●●● con 👁️; 📣 Compartir con el afiche (menú del celular: elegís WhatsApp Business); PIN: cierra el teclado y muestra ⏳ Verificando visible arriba; aviso único de versión nueva · V35: 📣 comparte planes.html?v=N (WhatsApp guarda la vista previa vieja de un link ya enviado) · V34: botón 💬 Soporte por WhatsApp a VAO Sistemas (encabezado y pantalla del PIN) · V33: app instalable (manifest + service worker sin copias) y recuerda el último comercio · V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
 const HOY_KEY    = 'vao_ventas_' + PREFIJO + '_' + new Date().toISOString().slice(0, 10);
 const CARRITO_KEY= 'vao_carrito_' + PREFIJO;
 
@@ -1099,19 +1164,51 @@ let CONFIG_ACTUAL = null;
 let COBRO_ACTUAL = { avanzado: false, cot: {} }; // V39: cobro avanzado (lo prende VAO desde Admin)
 let MODO_CONSULTA = null; // V25: { motivo: 'VENCIDA' | 'SUSPENDIDA', mensaje } cuando el negocio está en solo lectura
 
+let PRESTACIONES_ACTUAL = null; // V40 (v043): módulos efectivos que manda el servidor (plan + complementos − suspendidos)
 function generarToolbarSegunPacks(config) {
+    if (PRESTACIONES_ACTUAL && PRESTACIONES_ACTUAL.modulos) config = Object.assign({}, config, PRESTACIONES_ACTUAL.modulos);
+    const conGestion = PRESTACIONES_ACTUAL && PRESTACIONES_ACTUAL.modulos ? config.extra_fiados_gestion === true : false; // V41: sin servidor v043 la tarjeta P2 no lleva «Clientes» (Fiados ya está en P1)
     const botonesPorPack = {
         btnIngreso:  config.pack1_ingreso,
         btnHoy:      config.pack1_hoy,
         btnAjuste:   config.pack2_editor_stock,
+        btnInventarioP2: config.pack2_editor_stock,
         btnReportes: config.pack2_reportes,
-        btnFiados:   config.extra_fiados
+        btnFiados:   config.extra_fiados,                     // P1: fiado sencillo (fiar y cobrar completo)
+        btnClientesP2: config.extra_fiados && conGestion,     // P2: gestión completa de fiados y clientes
+        btnMisDatos: true,
+        btnCobroAvanzado: _cobroAvanzadoV41_(config),
+        btnCotizaciones: _cobroAvanzadoV41_(config) && _hayCotizacionV41_()
     };
     Object.keys(botonesPorPack).forEach(function(id) {
         const btn = document.getElementById(id);
         if (btn) btn.style.display = (botonesPorPack[id] === true) ? '' : 'none';
     });
+    ['tarjetaP1', 'tarjetaP2', 'tarjetaP3'].forEach(function (g) { // V41: una tarjeta sin botones no se muestra
+        const el = document.getElementById(g); if (!el) return;
+        el.style.display = [...el.querySelectorAll('.btn-tool')].some(b => b.style.display !== 'none') ? '' : 'none';
+    });
+    const inv = document.getElementById('btnRevisarInv'); if (inv) inv.style.display = config.pack2_editor_stock === true ? '' : 'none'; // V40: revisión de inventario = P2
 }
+
+// V41: tarjeta P3 — el complemento Cobro avanzado (lo confirma el servidor: getConfig.cobro y getConfig.prestaciones)
+function _cobroAvanzadoV41_(config) {
+    if (CONFIG_ACTUAL && CONFIG_ACTUAL.modoConsulta) return false;
+    if (PRESTACIONES_ACTUAL && PRESTACIONES_ACTUAL.modulos) return PRESTACIONES_ACTUAL.modulos.extra_cobro_avanzado === true && !!(COBRO_ACTUAL && COBRO_ACTUAL.avanzado);
+    return !!(COBRO_ACTUAL && COBRO_ACTUAL.avanzado);
+}
+function _hayCotizacionV41_() { const c = (COBRO_ACTUAL && COBRO_ACTUAL.cot) || {}; return Object.keys(c).some(k => Number(c[k]) > 0); }
+function abrirCobroAvanzadoV41() {
+    if (!ventaActual.length) { mostrarToast('🔀 Cargá los productos y tocá acá para cobrar con varios medios o monedas', 'naranja'); return; }
+    abrirConfirm();
+    if (!_leerVentaEnCurso()) seleccionarMetodo('mixto');
+}
+function verCotizacionesV41() {
+    const c = (COBRO_ACTUAL && COBRO_ACTUAL.cot) || {};
+    const l = Object.keys(c).filter(k => Number(c[k]) > 0).map(k => '1 ' + k + ' = $' + Number(c[k]).toLocaleString('es-AR'));
+    mostrarToast('💱 ' + (l.length ? l.join(' · ') + ' (las carga VAO Sistemas)' : 'Sin cotizaciones cargadas'), 'verde');
+}
+function abrirRevisionInventarioV41() { abrirMisDatos(); setTimeout(revisarInventarioV39, 50); }
 
 function mostrarFormularioPin(mensajeError) {
     document.getElementById('overlayPinTitulo').textContent = 'Ingresá tu PIN';
@@ -1174,6 +1271,7 @@ async function verificarSesionCliente() {
         } else {
             CONFIG_ACTUAL = d.config;
             COBRO_ACTUAL = d.cobro || { avanzado: false, cot: {} }; // V39
+            PRESTACIONES_ACTUAL = d.prestaciones || null; // V40 (servidor v043; con uno anterior sigue como antes)
             generarToolbarSegunPacks(CONFIG_ACTUAL);
             mxMostrarBoton(); // V39
             ocultarOverlayPin();
@@ -2333,6 +2431,7 @@ const MX_MEDIOS = [['EFECTIVO', '💵 Efectivo'], ['DEBITO', '💳 Débito'], ['
 function mxMostrarBoton() {
     const b = document.getElementById('metodo-mixto');
     if (b) b.style.display = (COBRO_ACTUAL && COBRO_ACTUAL.avanzado && !(CONFIG_ACTUAL && CONFIG_ACTUAL.modoConsulta)) ? '' : 'none';
+    if (CONFIG_ACTUAL) generarToolbarSegunPacks(CONFIG_ACTUAL); // V41: la tarjeta P3 sigue al complemento
 }
 function _mxFmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 }); }
 function _mxTotal() { return ventaActual.reduce((s, i) => s + i.price * i.qty, 0); }
@@ -3321,8 +3420,36 @@ function _mpSolicitudId(plan) {
     try { localStorage.setItem(k, JSON.stringify({ id: id, ts: Date.now() })); } catch (e) {}
     return id;
 }
+// V40 (v043): «Mi plan» — qué tiene contratado el comercio. Solo lectura; los cambios los hace VAO Sistemas.
+async function cargarMiPlanV40() {
+    const box = document.getElementById('miPlanV40'); if (!box) return;
+    box.innerHTML = '<div style="color:#bbb;padding:8px 0;">Cargando tu plan…</div>';
+    let r = null; try { r = await _llamarAPI('getMiPlan', { token: _tokenActual() }); } catch (e) { r = null; }
+    if (!r || !r.success) { box.innerHTML = ''; return; } // servidor anterior: solo se muestra el pago, como antes
+    const grupos = { P1: 'P1 Esencial', P2: 'P2 Gestión', P3: 'P3 Complementos' };
+    const porG = g => (r.prestaciones || []).filter(x => x.grupo === g);
+    const est = { ACTIVO: '🟢 Activo', VENCIDO: '🔴 Vencido', SUSPENDIDO: '🔴 Suspendido' }[r.estado] || _escHTML(String(r.estado || '').replace('_', ' '));
+    let h = '<div class="md-fila" style="border:none;"><div><b>' + _escHTML(r.planNombre || r.plan || 'Sin plan') + '</b><small>' + est + (r.vence ? ' · vence ' + _escHTML(r.vence) : '') + '</small></div></div>' +
+        '<div class="mp-chip">Ventas con medios simples</div><div class="mp-chip">📥 Mis datos e historial</div>';
+    ['P1', 'P2', 'P3'].forEach(g => { const ps = porG(g); if (ps.length) h += '<div class="mp-grupo">' + grupos[g] + '</div>' + ps.map(x => '<span class="mp-chip">' + _escHTML(x.nombre) + '</span>').join(''); });
+    (r.complementos || []).forEach(c => { h += '<div style="font-size:0.78rem;color:#555;">➕ ' + _escHTML(c.nombre) + (c.vence ? ' · hasta ' + _escHTML(c.vence) : '') + '</div>'; });
+    if ((r.suspendidas || []).length) h += '<div class="mp-grupo" style="color:#B71C1C;">Suspendido por VAO Sistemas</div>' + r.suspendidas.map(x => '<span class="mp-chip off">' + _escHTML(x.nombre || x) + '</span>').join('');
+    if (r.totalMensual !== null && r.totalMensual !== undefined) h += '<div style="font-size:0.85rem;margin-top:6px;"><b>Total mensual:</b> $' + Number(r.totalMensual).toLocaleString('es-AR') + '</div>';
+    h += '<button onclick="pedirCambioPlanV40()" style="width:100%;margin:10px 0 14px;padding:12px;border:none;border-radius:12px;background:#E8F5E9;color:#1B5E20;font-weight:800;font-family:inherit;font-size:0.92rem;cursor:pointer;">💬 Pedir un cambio de plan o un complemento</button>' +
+        '<div style="font-size:0.75rem;color:#777;margin-bottom:10px;">El cambio lo hace VAO Sistemas cuando se registra el pago. Tus ventas, fiados y pagos nunca se borran al cambiar de plan.</div>';
+    box.innerHTML = h; _MIPLAN_V40 = r;
+}
+let _MIPLAN_V40 = null;
+function pedirCambioPlanV40() {
+    let nombre = ''; try { nombre = (document.getElementById('headerTitulo').textContent || '').trim(); } catch (e) {}
+    const r = _MIPLAN_V40 || {};
+    const t = 'Hola VAO Sistemas, quiero cambiar mi plan de VAO POS.\nComercio: ' + (nombre ? nombre + ' ' : '') + '(' + PREFIJO + ')\nPlan actual: ' + (r.planNombre || '-') +
+        ((r.complementos || []).length ? ' + ' + r.complementos.map(c => c.nombre).join(' + ') : '') + '\n\nQuiero: ';
+    window.open('https://wa.me/' + SOPORTE_WHATSAPP + '?text=' + encodeURIComponent(t), '_blank', 'noopener');
+}
 async function abrirPagoPlan() {
     document.getElementById('modalPagoPlan').classList.add('open');
+    cargarMiPlanV40();
     const lista = document.getElementById('pagoPlanLista'), est = document.getElementById('pagoPlanEstado');
     est.textContent = ''; lista.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;">Cargando planes…</div>';
     try {
@@ -3532,10 +3659,11 @@ async function descargarDatos(que) {
     <div class="modal-sheet">
         <div class="modal-handle"></div>
         <div class="modal-header">
-            <span class="modal-titulo">💳 Pagar mi plan</span>
+            <span class="modal-titulo">💳 Mi plan</span>
             <button class="modal-cerrar" onclick="cerrarPagoPlan()">✕</button>
         </div>
         <div style="overflow-y:auto;max-height:78vh;padding:0 16px 18px;">
+            <div id="miPlanV40"></div>
             <div id="pagoPlanLista"></div>
             <div id="pagoPlanEstado" style="font-size:0.82rem;color:#0D47A1;font-weight:700;margin-top:10px;"></div>
         </div>
@@ -3552,7 +3680,7 @@ async function descargarDatos(que) {
         <div style="overflow-y:auto;max-height:78vh;padding:0 16px 18px;">
             <div style="font-size:0.82rem;color:#555;margin:2px 0 8px;">Tus registros son tuyos. Descargá cada hoja en un archivo que abre Excel o Google Sheets (CSV). Solo tus datos: nunca los de otros comercios.</div>
             <!-- V31: herramientas de control del comercio -->
-            <button onclick="revisarInventarioV39()" style="width:100%;margin:4px 0 6px;padding:12px;border:none;border-radius:12px;background:#E8F5E9;color:#1B5E20;font-weight:800;font-family:inherit;font-size:0.92rem;cursor:pointer;">✔️ Revisar inventario antes de vender</button>
+            <button id="btnRevisarInv" onclick="revisarInventarioV39()" style="width:100%;margin:4px 0 6px;padding:12px;border:none;border-radius:12px;background:#E8F5E9;color:#1B5E20;font-weight:800;font-family:inherit;font-size:0.92rem;cursor:pointer;">✔️ Revisar inventario antes de vender</button>
             <div id="invRevision" style="display:none;font-size:0.82rem;line-height:1.4;padding:8px 10px;border-radius:10px;margin-bottom:8px;white-space:pre-wrap;"></div>
             <button onclick="abrirCambios()" style="width:100%;margin:4px 0 12px;padding:12px;border:none;border-radius:12px;background:#EDE7F6;color:#4527A0;font-weight:800;font-family:inherit;font-size:0.92rem;cursor:pointer;">🕵️ Historial de cambios (precios, stock e ingresos)</button>
             <div id="misDatosLista"><div style="text-align:center;padding:30px;color:#bbb;">Cargando…</div></div>
