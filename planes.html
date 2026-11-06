@@ -19,7 +19,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-/* planes.html v4 (STAGING · v044) — «Armá tu plan» como rompecabezas: arrastrar y encajar, o tocar las piezas.
+/* planes.html v5 (STAGING · v044.1) — tres planes como composición envolvente: P1 es la base, P2 abraza a P1, P3 PRO abraza a P1 y P2 y suma el paquete PRO.
+   Complementos opcionales aparte (verdes). Íconos y nombres salen de la matriz central del servidor (catalogoV043.apps).
+   planes.html v4 (STAGING · v044) — «Armá tu plan» como rompecabezas: arrastrar y encajar, o tocar las piezas.
    planes.html v3 (STAGING · v043) — página pública. Planes P1/P2, complementos P3 «Armá tu plan». Nombres, prestaciones y precios vienen del servidor (PLANES_VAO y COMPLEMENTOS_VAO). */
 :root {
   --tinta:   #0D47A1;   /* azul VAO oscuro: títulos y texto fuerte */
@@ -131,6 +133,35 @@ ul.hace b { color: var(--tinta); }
 .encastre { display: flex; align-items: stretch; }
 .encastre .pieza:first-child { border-radius: 10px 0 0 10px; } .encastre .pieza + .pieza { border-radius: 0 10px 10px 0; padding-left: 20px; }
 .encastre .pieza:first-child::after { z-index: 1; }
+/* v5: tarjetas envolventes */
+.planes5 { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 1000px) { .planes5 { grid-template-columns: 1fr 1.2fr 1.45fr; align-items: stretch; width: min(1180px, calc(100vw - 40px)); margin-left: calc((100% - min(1180px, calc(100vw - 40px))) / 2); } }   /* sale de la columna para que las tres tarjetas respiren */
+@media (min-width: 640px) and (max-width: 999px) { .planes5 .iconos { gap: 6px; } }
+.p5 { position: relative; border-radius: 20px; padding: 16px; background: #fff; display: flex; flex-direction: column; gap: 10px; cursor: pointer; border: 3px solid transparent; transition: transform .15s, box-shadow .15s; }
+.p5:hover { transform: translateY(-2px); }
+.p5.BASICO { border-color: #1E88E5; } .p5.PRO { border-color: #7E57C2; }
+.p5.PLUS { border: 3px solid transparent; background: linear-gradient(#fff, #fff) padding-box, linear-gradient(135deg, #8A5A00, #D4A017 45%, #F3D27A 70%, #8A5A00) border-box; box-shadow: 0 8px 26px rgba(176,125,18,.25); }
+.p5.elegido { box-shadow: 0 0 0 4px #CFE3FA, 0 8px 22px rgba(13,71,161,.18); } .p5.PLUS.elegido { box-shadow: 0 0 0 4px #F6E3B0, 0 8px 26px rgba(176,125,18,.35); }
+.p5-cab { display: flex; align-items: center; gap: 10px; }
+.p5-sello { font-weight: 900; color: #fff; border-radius: 10px; padding: 6px 10px; font-size: .95rem; }
+.BASICO .p5-sello, .env.e1 > .env-tit { background: #1E88E5; } .PRO .p5-sello, .env.e2 > .env-tit { background: #7E57C2; } .PLUS .p5-sello { background: linear-gradient(135deg, #8A5A00, #D4A017); color: #241800; }
+.p5 h3 { margin: 0; font-size: 1.25rem; color: var(--tinta); }
+.p5-precio { white-space: nowrap; font-size: 1.7rem; font-weight: 800; color: var(--tinta); font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+.p5-precio small { font-size: .85rem; font-weight: 400; color: var(--suave); }
+.env { border-radius: 14px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.env-tit { align-self: flex-start; color: #fff; font-weight: 800; font-size: .74rem; border-radius: 6px; padding: 2px 7px; }
+.env.e1 { background: #E3F2FD; border: 2px solid #1E88E5; }
+.env.e2 { background: #F5F0FC; border: 2px solid #7E57C2; }   /* la línea violeta abraza a P1 */
+.env.e3 { background: #FFFBEF; border: 2px solid #D4A017; }
+.env.e3 > .env-tit { background: linear-gradient(135deg, #8A5A00, #D4A017); color: #241800; }
+.iconos { display: flex; flex-wrap: wrap; gap: 5px; }
+.ic5 { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,.85); border-radius: 999px; padding: 3px 8px; font-size: .8rem; font-weight: 700; color: #1C2533; }
+.p5 .elegir { margin-top: auto; display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--tinta); background: #F4F7FB; border-radius: 12px; padding: 10px; }
+.p5 .elegir input { width: 22px; height: 22px; margin: 0; }
+.p5 .tag { position: absolute; top: -12px; right: 14px; background: linear-gradient(135deg, #8A5A00, #D4A017); color: #241800; font-weight: 900; font-size: .75rem; border-radius: 999px; padding: 3px 10px; }
+.siempre { font-size: .9rem; color: var(--suave); margin: 0 0 12px; }
+.pieza.p3pro { background: linear-gradient(135deg, #8A5A00, #D4A017); color: #241800; }
+.pieza.p3 { background: #2E8B57; }
 .resumen { background: #fff; border: 2px solid var(--tinta); border-radius: var(--radio); padding: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .95rem; }
 .resumen .linea { display: flex; justify-content: space-between; gap: 10px; }
 .resumen .total { border-top: 2px dashed #888; margin-top: 8px; padding-top: 8px; font-weight: 600; font-size: 1.05rem; }
@@ -218,6 +249,7 @@ footer { padding: 26px 0 40px; font-size: .88rem; color: var(--suave); }
 <section style="padding-top:8px;">
   <div class="col">
     <h2>Planes</h2>
+    <p class="siempre oculto" id="siempre">En todos los planes: ventas con efectivo, transferencia, débito, crédito o QR, y 🏪 Mis datos (tus registros son tuyos).</p>
     <div id="planes" class="planes"><div class="estado-carga">Cargando los planes…</div></div>
     <p class="chico" id="notaPlanes" style="margin-top:12px;">Los precios son mensuales, en pesos argentinos. Para pasar a un plan pago, VAO Sistemas te envía el contrato y sus condiciones antes de cobrarte.</p>
   </div>
@@ -227,9 +259,9 @@ footer { padding: 26px 0 40px; font-size: .88rem; color: var(--suave); }
 <section id="armaTuPlan" class="oculto" style="padding-top:8px;">
   <div class="col">
     <h2>Armá tu plan</h2>
-    <p>Arrastrá las piezas al tablero (o tocalas). Primero el plan base, <b>P1 Esencial</b> o <b>P2 Gestión</b> (P2 ya trae todo P1). Después sumale los complementos <b style="color:#2E8B57">P3</b> que quieras: no son un plan aparte, se encastran en tu plan.</p>
+    <p>Arrastrá las piezas al tablero (o tocalas). Primero tu plan: <b>P1</b>, <b>P2</b> o <b style="color:#8A5A00">P3 PRO</b>. Después, si querés, sumá <b style="color:#2E8B57">complementos</b>.</p>
     <div class="rompe">
-      <div class="bandeja" id="bandeja" aria-label="Piezas disponibles"><h4>Piezas</h4><div class="piezas" id="piezasBase"></div><h4 style="margin-top:12px;">Complementos P3</h4><div class="piezas" id="piezasP3"></div></div>
+      <div class="bandeja" id="bandeja" aria-label="Piezas disponibles"><h4>Piezas</h4><div class="piezas" id="piezasBase"></div><h4 style="margin-top:12px;">Complementos opcionales</h4><div class="piezas" id="piezasP3"></div></div>
       <div class="tablero" aria-label="Tu plan"><h4>Tu plan</h4>
         <div class="encaje base" id="ranuraBase" data-zona="base" aria-label="Lugar del plan base"></div>
         <div class="encaje p3" id="ranuraP3" data-zona="p3" aria-label="Lugar de los complementos"></div>
@@ -332,7 +364,7 @@ footer { padding: 26px 0 40px; font-size: .88rem; color: var(--suave); }
 <footer><div class="col">VAO POS es un servicio de VAO Sistemas. Página de pruebas (STAGING).</div></footer>
 
 <script>
-// planes.html v4 (v044) — STAGING. v3 (v043): Todo lo comercial (precios, oferta, condiciones, cupos) lo decide el servidor.
+// planes.html v5 (v044.1) — STAGING. v4 (v044) / v3 (v043): Todo lo comercial (precios, oferta, condiciones, cupos) lo decide el servidor.
 const API_URL = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
 const URL_PUBLICA = location.origin + location.pathname;
 const LS_SOL = 'vao_registro_solicitud';
@@ -415,7 +447,36 @@ function htmlPlanV3(p) {
     '<ul class="mods">' + items + '</ul>' +
     '<label class="elegir"><input type="radio" name="planElegido" value="' + esc(p.codigo) + '"' + (el ? ' checked' : '') + '> Elegir ' + esc(p.nombre) + '</label></div>';
 }
+const NOM5 = { BASICO: 'P1', PRO: 'P2', PLUS: 'P3' }, BASES5 = ['BASICO', 'PRO', 'PLUS'];
+function iconos5(g) { const apps = (CATALOGO && CATALOGO.apps) || []; return '<div class="iconos">' + apps.filter(a => a.grupo === g).map(a => '<span class="ic5" title="' + esc(a.descripcion) + '">' + esc(a.icono) + ' ' + esc(a.nombre) + '</span>').join('') + '</div>'; }
+function env5(n, tit, g) { return '<div class="env e' + n + '"><span class="env-tit">' + esc(tit) + '</span>' + iconos5(g) + '</div>'; }
+function htmlPlanV5(p) {
+  const el = ELECCION.plan === p.codigo, n = { BASICO: 1, PRO: 2, PLUS: 3 }[p.codigo];
+  const precio = p.precioRegular === null || p.precioRegular === undefined ? '<div class="p5-precio"><small>Precio a confirmar</small></div>'
+    : '<div class="p5-precio">' + pesos(p.conPromo && PROMO && p.precioLanzamiento ? p.precioLanzamiento : p.precioRegular) + '<small> /mes' + (p.conPromo && PROMO && p.precioLanzamiento ? ' · lanzamiento (luego ' + pesos(p.precioRegular) + ')' : '') + '</small></div>';
+  // composición envolvente: cada plan contiene al anterior dentro de su propia línea
+  let cuerpo = env5(1, 'P1 Esencial', 'P1');
+  if (n >= 2) cuerpo = '<div class="env e2"><span class="env-tit">P2 Gestión</span>' + cuerpo + iconos5('P2') + '</div>';
+  if (n >= 3) cuerpo = '<div class="env e3"><span class="env-tit">P3 PRO</span>' + cuerpo + iconos5('P3') + '</div>';
+  return '<div class="p5 plan elegible ' + p.codigo + (el ? ' elegido' : '') + '" data-plan="' + esc(p.codigo) + '">' + (n === 3 ? '<span class="tag">COMPLETO</span>' : '') +
+    '<div class="p5-cab"><span class="p5-sello">' + NOM5[p.codigo] + '</span><h3>' + esc(p.nombre) + '</h3></div>' + precio + cuerpo +
+    '<label class="elegir"><input type="radio" name="planElegido" value="' + esc(p.codigo) + '"' + (el ? ' checked' : '') + '> Elegir ' + esc(p.nombre) + '</label></div>';
+}
 function pintarPlanesV3() {
+  if (CATALOGO && CATALOGO.apps) {   // v5: tarjetas envolventes desde la matriz central
+    const prueba = PLANES.find(p => p.codigo === 'PRUEBA'), pagos = BASES5.map(c => PLANES.find(p => p.codigo === c)).filter(Boolean);
+    $('siempre').classList.remove('oculto');
+    $('planes').innerHTML = (prueba ? '<div class="plan gratis"><div class="plan-cab"><h3>' + esc(prueba.nombre) + '</h3><div class="precio">Gratis</div></div><div class="lineas-precio">' + esc($('tDias').textContent) + ' días + ' + esc($('tGracia').textContent) + ' de gracia, con P1 y P2 completos. Sin tarjeta.</div></div>' : '') +
+      '<div class="planes5">' + pagos.map(htmlPlanV5).join('') + '</div>' + (PROMO ? '<p class="chico">' + esc(PROMO.condiciones) + '</p>' : '');
+    $('planes').querySelectorAll('.plan.elegible').forEach(card => card.addEventListener('click', ev => {
+      const cod = card.dataset.plan; if (ELECCION.plan === cod && ev.target.tagName !== 'INPUT') return;
+      ELECCION.plan = cod; guardarEleccion(); pintarPlanesV3(); pintarComplementos(); if (solicitudId) anotarEleccion(false);
+    }));
+    return;
+  }
+  pintarPlanesV4viejo();
+}
+function pintarPlanesV4viejo() {
   const prueba = PLANES.find(p => p.codigo === 'PRUEBA');
   const pagos = PLANES.filter(p => p.codigo === 'BASICO' || p.codigo === 'PRO');
   const otros = PLANES.filter(p => ['PRUEBA', 'BASICO', 'PRO'].indexOf(p.codigo) === -1);
@@ -435,7 +496,7 @@ function pintarPlanesV3() {
 function piezaHTML(cls, clave, titulo, sub, extra) { return '<button type="button" class="pieza ' + cls + '" draggable="true" data-pieza="' + esc(clave) + '"' + (extra || '') + '>' + esc(titulo) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</button>'; }
 function aplicarPieza(clave, accion) {
   const lista = (CATALOGO && CATALOGO.complementos) || [];
-  if (clave === 'BASICO' || clave === 'PRO') { ELECCION.plan = accion === 'quitar' ? '' : clave; }
+  if (BASES5.indexOf(clave) !== -1) { ELECCION.plan = accion === 'quitar' ? '' : clave; }
   else {
     const c = lista.find(x => x.clave === clave); if (!c) return;
     ELECCION.complementos = ELECCION.complementos.filter(k => k !== clave);
@@ -447,20 +508,22 @@ function pintarComplementos() {
   const lista = (CATALOGO && CATALOGO.complementos) || [];
   ELECCION.complementos = ELECCION.complementos.filter(k => lista.some(c => c.clave === k && (!ELECCION.plan || c.planesBase.indexOf(ELECCION.plan) !== -1)));
   guardarEleccion();
-  const p1 = PLANES.find(p => p.codigo === 'BASICO'), p2 = PLANES.find(p => p.codigo === 'PRO');
+  const p1 = PLANES.find(p => p.codigo === 'BASICO'), p2 = PLANES.find(p => p.codigo === 'PRO'), p3 = PLANES.find(p => p.codigo === 'PLUS');
   const nom = (p, d) => p ? p.nombre : d, pre = p => p ? precioTxt(p.precioRegular, p.precioLanzamiento, p.conPromo) : '';
   // bandeja: lo que no está en el tablero
   $('piezasBase').innerHTML = (ELECCION.plan !== 'BASICO' && p1 ? piezaHTML('p1', 'BASICO', nom(p1, 'P1 Esencial'), 'Lo de todos los días · ' + pre(p1), ' aria-label="Agregar ' + esc(nom(p1, 'P1')) + ' a tu plan"') : '') +
-    (ELECCION.plan !== 'PRO' && p2 ? piezaHTML('p2', 'PRO', nom(p2, 'P2 Gestión'), 'Incluye P1 + gestión · ' + pre(p2), ' aria-label="Agregar ' + esc(nom(p2, 'P2')) + ' a tu plan"') : '') || '<span class="chico">El plan base ya está en el tablero.</span>';
+    (ELECCION.plan !== 'PRO' && p2 ? piezaHTML('p2', 'PRO', nom(p2, 'P2 Gestión'), 'Incluye P1 + gestión · ' + pre(p2), ' aria-label="Agregar ' + esc(nom(p2, 'P2')) + ' a tu plan"') : '') +
+    (ELECCION.plan !== 'PLUS' && p3 ? piezaHTML('p3pro', 'PLUS', nom(p3, 'P3 PRO'), 'P1 + P2 + paquete PRO · ' + pre(p3), ' aria-label="Agregar ' + esc(nom(p3, 'P3')) + ' a tu plan"') : '') || '<span class="chico">El plan ya está en el tablero.</span>';
   $('piezasP3').innerHTML = lista.filter(c => ELECCION.complementos.indexOf(c.clave) === -1).map(c => {
     const ok = !ELECCION.plan || c.planesBase.indexOf(ELECCION.plan) !== -1;
     return piezaHTML('p3' + (ok ? '' : ' no'), c.clave, c.nombre, precioTxt(c.precioRegular, c.precioLanzamiento, !!PROMO), ' title="' + esc(c.descripcion) + '" aria-label="Sumar ' + esc(c.nombre) + '"' + (ok ? '' : ' disabled'));
   }).join('') || (lista.length ? '<span class="chico">Sumaste todos los complementos.</span>' : '<span class="chico">Por ahora no hay complementos para sumar.</span>');
   // tablero
-  $('ranuraBase').innerHTML = !ELECCION.plan ? 'Arrastrá acá P1 Esencial o P2 Gestión (o tocá la pieza)'
+  $('ranuraBase').innerHTML = !ELECCION.plan ? 'Arrastrá acá tu plan: P1, P2 o P3 PRO (o tocá la pieza)'
+    : ELECCION.plan === 'PLUS' ? '<span class="encastre">' + piezaHTML('p1', 'PLUS', 'P1', 'incluido', ' tabindex="-1" aria-hidden="true"') + piezaHTML('p2', 'PLUS', '+ P2', 'incluido', ' tabindex="-1" aria-hidden="true"') + piezaHTML('p3pro', 'PLUS', '+ PRO', nom(p3, 'P3 PRO') + ' · tocá para quitar', ' aria-label="Quitar ' + esc(nom(p3, 'P3')) + '"') + '</span>'
     : ELECCION.plan === 'BASICO' ? piezaHTML('p1', 'BASICO', nom(p1, 'P1 Esencial'), 'tocá para quitar', ' aria-label="Quitar ' + esc(nom(p1, 'P1')) + '"')
     : '<span class="encastre">' + piezaHTML('p1', 'PRO', 'P1 Esencial', 'incluido en P2', ' aria-label="Quitar ' + esc(nom(p2, 'P2')) + '" tabindex="-1"') + piezaHTML('p2', 'PRO', '+ Gestión', nom(p2, 'P2 Gestión') + ' · tocá para quitar', ' aria-label="Quitar ' + esc(nom(p2, 'P2')) + '"') + '</span>';
-  $('ranuraP3').innerHTML = ELECCION.complementos.length ? lista.filter(c => ELECCION.complementos.indexOf(c.clave) !== -1).map(c => piezaHTML('p3', c.clave, c.nombre, 'tocá para quitar', ' aria-label="Quitar ' + esc(c.nombre) + '"')).join('') : 'Sumá acá los complementos P3 que quieras (opcional)';
+  $('ranuraP3').innerHTML = ELECCION.complementos.length ? lista.filter(c => ELECCION.complementos.indexOf(c.clave) !== -1).map(c => piezaHTML('p3', c.clave, c.nombre, 'tocá para quitar', ' aria-label="Quitar ' + esc(c.nombre) + '"')).join('') : 'Sumá acá los complementos que quieras (opcional)';
   // tocar = poner / sacar
   $('bandeja').querySelectorAll('.pieza:not([disabled])').forEach(b => b.onclick = () => aplicarPieza(b.dataset.pieza, 'poner'));
   document.querySelectorAll('#ranuraBase .pieza, #ranuraP3 .pieza').forEach(b => b.onclick = () => aplicarPieza(b.dataset.pieza, 'quitar'));
@@ -477,14 +540,14 @@ function prepararZonas() {
     el.addEventListener('dragleave', () => el.classList.remove('sobre'));
     el.addEventListener('drop', e => { e.preventDefault(); el.classList.remove('sobre'); const [clave, desde] = String(e.dataTransfer.getData('text/plain')).split('|'); if (clave) alSoltar(clave, desde); });
   };
-  zona($('ranuraBase'), (k, desde) => { if (k === 'BASICO' || k === 'PRO') aplicarPieza(k, 'poner'); });
-  zona($('ranuraP3'), (k, desde) => { if (k !== 'BASICO' && k !== 'PRO') aplicarPieza(k, 'poner'); });
+  zona($('ranuraBase'), (k, desde) => { if (BASES5.indexOf(k) !== -1) aplicarPieza(k, 'poner'); });
+  zona($('ranuraP3'), (k, desde) => { if (BASES5.indexOf(k) === -1) aplicarPieza(k, 'poner'); });
   zona($('bandeja'), (k, desde) => { if (desde === 'tablero') aplicarPieza(k, 'quitar'); });
 }
 function pintarResumen() {
   const r = $('resumen');
   const p = PLANES.find(x => x.codigo === ELECCION.plan);
-  if (!p) { r.innerHTML = '<div>Todavía no elegiste un plan base. Tocá P1 Esencial o P2 Gestión.</div><div class="cond">Igual podés empezar la prueba gratis: el plan se elige antes de pagar.</div>'; return; }
+  if (!p) { r.innerHTML = '<div>Todavía no elegiste un plan. Tocá P1, P2 o P3 PRO.</div><div class="cond">Igual podés empezar la prueba gratis: el plan se elige antes de pagar.</div>'; return; }
   const comps = ((CATALOGO && CATALOGO.complementos) || []).filter(c => ELECCION.complementos.indexOf(c.clave) !== -1);
   let total = precioNum(p.precioRegular, p.precioLanzamiento, p.conPromo);
   comps.forEach(c => { const n = precioNum(c.precioRegular, c.precioLanzamiento, !!PROMO); total = (total === null || n === null) ? null : total + n; });

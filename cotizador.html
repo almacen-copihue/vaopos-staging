@@ -158,7 +158,7 @@ async function cargarHistorial() {
     }));
   } catch (e) { VAO.msg('msgHist', VAO.sinConexion, 'error'); }
 }
-VAO.iniciar({ modulo: 'extra_cotizador', titulo: 'Cotización de productos', icono: '🧾', grupo: 'P3' }).then(async ok => {
+VAO.iniciar({ modulo: 'extra_cotizador', titulo: 'Cotización de productos', icono: '📝', grupo: 'P3' }).then(async ok => {
   if (!ok) return;
   VAO.pestanas('tabs', t => { if (t === 'historial') cargarHistorial(); });
   try { const r = await VAO.api('getProductos', {}); PRODUCTOS = (r.productos || []); } catch (e) { VAO.msg('msgNuevo', VAO.sinConexion, 'error'); }

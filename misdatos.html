@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0D47A1">
+<link rel="icon" type="image/png" href="favicon-48.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="vao-comun.css">
+<title>[STAGING] Mis datos · VAO POS</title>
+<style>
+/* misdatos.html v1 (v044.1) — base, en todos los planes. Datos del comercio, su plan, descargas e historial de cambios.
+   Antes era una ventana del POS que además mezclaba la revisión de inventario (ahora en inventario.html, P2). */
+.plan-ficha { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.plan-sello { font-weight: 900; color: #fff; border-radius: 12px; padding: 8px 12px; background: #1E88E5; }
+.plan-sello.PRO { background: #7E57C2; } .plan-sello.PLUS { background: linear-gradient(135deg, #8A5A00, #D4A017); } .plan-sello.PRUEBA { background: #2E8B57; }
+.hc { border-bottom: 1px solid var(--borde); padding: 8px 2px; }
+.hc small { color: var(--suave); }
+</style>
+</head>
+<body>
+<header id="vaoCabecera"></header>
+<div id="vaoBloqueo" class="oculto"></div>
+<main class="vao oculto" id="vaoContenido">
+  <div id="vaoAviso" class="oculto"></div>
+  <nav class="vao-pestanas" id="tabs" role="tablist">
+    <button data-tab="comercio" class="activo">🏪 Mi comercio</button>
+    <button data-tab="descargas">📥 Descargas</button>
+    <button data-tab="cambios">🕵️ Historial de cambios</button>
+  </nav>
+  <section data-panel="comercio">
+    <div class="vao-tarjeta"><h2>Mi plan</h2><div id="plan">Cargando…</div></div>
+    <div class="vao-tarjeta">
+      <h2>Datos del comercio</h2>
+      <p style="margin:0 0 8px;color:var(--suave);font-size:.86rem">Aparecen en tus tickets y en lo que compartís con clientes. El plan y los pagos los maneja VAO Sistemas.</p>
+      <div id="campos" class="vao-fila"></div>
+      <div id="msgDatos" class="oculto"></div>
+      <button class="vao-btn primario vao-escribe" id="btnGuardar">Guardar cambios</button>
+    </div>
+  </section>
+  <section data-panel="descargas" class="oculto">
+    <div class="vao-tarjeta"><h2>Tus registros son tuyos</h2>
+      <p style="margin:0 0 8px;color:var(--suave);font-size:.86rem">Descargá cada hoja en un archivo que abre Excel o Google Sheets (CSV). Solo tus datos.</p>
+      <ul class="vao-lista" id="hojas"></ul><div id="msgDesc" class="oculto"></div></div>
+  </section>
+  <section data-panel="cambios" class="oculto">
+    <div class="vao-tarjeta"><h2>Qué se cambió y cuándo</h2>
+      <div class="vao-campo"><label for="filtro">Buscar producto</label><input id="filtro" placeholder="Ej.: yerba"></div>
+      <div id="cambios"></div></div>
+  </section>
+</main>
+<div class="staging-badge">STAGING</div>
+<script src="vao-comun.js"></script>
+<script>
+const $ = id => document.getElementById(id); let DATOS = {}, CAMBIOS = [];
+const NOMPLAN = { BASICO: 'P1 Esencial', PRO: 'P2 Gestión', PLUS: 'P3 PRO', PRUEBA: 'Prueba' };
+async function plan() {
+  const r = await VAO.api('getMiPlan', {});
+  if (!r.success) { $('plan').textContent = r.error || 'No se pudo cargar.'; return; }
+  const grupos = { P1: 'P1 Esencial', P2: 'P2 Gestión', P3: 'P3 PRO', C: 'Complementos' };
+  const porG = {}; r.prestaciones.forEach(p => (porG[p.grupo || 'P1'] = porG[p.grupo || 'P1'] || []).push(p.nombre.split(' (')[0]));
+  $('plan').innerHTML = '<div class="plan-ficha"><span class="plan-sello ' + VAO.esc(r.plan) + '">' + VAO.esc(r.planNombre || NOMPLAN[r.plan] || r.plan) + '</span><div><b>' + VAO.esc(r.estado.replace('_', ' ')) + '</b>' +
+    (r.vence ? '<br><small>Vence el ' + VAO.esc(r.vence) + '</small>' : '') + '</div></div>' +
+    Object.keys(grupos).filter(g => porG[g]).map(g => '<p style="margin:8px 0 0"><b>' + grupos[g] + ':</b> ' + porG[g].map(VAO.esc).join(' · ') + '</p>').join('') +
+    (r.suspendidas.length ? '<p class="vao-msg aviso" style="margin-top:8px">Suspendido por VAO Sistemas: ' + r.suspendidas.map(VAO.esc).join(', ') + '</p>' : '') +
+    '<p style="margin:10px 0 0"><a class="vao-btn" href="' + VAO.urlPos() + '#miplan">💳 Ver precios o pedir un cambio de plan</a></p>';
+}
+async function datos() {
+  const r = await VAO.api('getDatosComercio', {});
+  if (!r.success) { VAO.msg('msgDatos', r.error, 'error'); return; }
+  DATOS = r.datos;
+  $('campos').innerHTML = Object.keys(r.etiquetas).map(k => '<div class="vao-campo"><label for="d_' + k + '">' + VAO.esc(r.etiquetas[k]) + '</label><input id="d_' + k + '" maxlength="80" value="' + VAO.esc(r.datos[k]) + '"' +
+    (k === 'email' ? ' type="email" inputmode="email"' : k === 'telefono' ? ' inputmode="tel"' : '') + (VAO.soloLectura ? ' disabled' : '') + '></div>').join('');
+}
+async function guardar() {
+  const d = {}; Object.keys(DATOS).forEach(k => { const v = $('d_' + k).value.trim(); if (v !== DATOS[k]) d[k] = v; });
+  if (!Object.keys(d).length) return VAO.msg('msgDatos', 'No cambiaste nada.', 'info');
+  const b = $('btnGuardar'); b.disabled = true;
+  try { const r = await VAO.api('guardarDatosComercio', { datos: d }); VAO.msg('msgDatos', r.success ? r.mensaje : r.error, r.success ? 'ok' : 'error'); if (r.success) datos(); }
+  catch (e) { VAO.msg('msgDatos', VAO.sinConexion, 'error'); }
+  b.disabled = false;
+}
+async function hojas() {
+  $('hojas').innerHTML = '<li class="vao-item">Cargando…</li>';
+  try {
+    const r = await VAO.api('listarHojasDescargables', {});
+    if (!r.success) { $('hojas').innerHTML = ''; return VAO.msg('msgDesc', r.error, 'error'); }
+    $('hojas').innerHTML = r.hojas.map(h => '<li class="vao-item"><div class="izq"><b>' + VAO.esc(h.nombre) + '</b><small>' + (h.filas ? h.filas.toLocaleString('es-AR') + (h.filas === 1 ? ' registro' : ' registros') : 'sin registros') + '</small></div>' +
+      '<button class="vao-btn chico" data-hoja="' + VAO.esc(h.clave) + '"' + (h.filas ? '' : ' disabled') + '>Descargar</button></li>').join('');
+    $('hojas').querySelectorAll('[data-hoja]').forEach(b => b.onclick = () => descargar(b));
+  } catch (e) { VAO.msg('msgDesc', VAO.sinConexion, 'error'); }
+}
+// Celda CSV segura (igual que el POS): entre comillas; si empieza con = + - @ se antepone ' (salvo números negativos).
+function celda(v) { if (typeof v === 'number' && isFinite(v)) v = String(Math.round(v * 1e6) / 1e6).replace('.', ','); let t = String(v == null ? '' : v);
+  if (/^[=+\-@\t\r]/.test(t) && !/^-\$?\s?\d+([.,]\d+)*%?$/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; }
+async function descargar(btn) {
+  const clave = btn.dataset.hoja; let filas = [], enc = null, nombre = clave, desde = 0, total = 0;
+  $('hojas').querySelectorAll('button').forEach(b => b.disabled = true);
+  try {
+    while (true) {
+      const r = await VAO.api('descargarHoja', { hoja: clave, desde });
+      if (!r.success) throw new Error(r.error || 'No se pudo descargar');
+      if (enc === null) { enc = r.encabezados || []; nombre = r.nombre || clave; }
+      total = r.total || 0; filas = filas.concat(r.filas || []); desde += (r.filas || []).length;
+      VAO.msg('msgDesc', '⏳ ' + nombre + ': ' + desde + ' de ' + total, 'info');
+      if (!(r.filas || []).length || desde >= total) break;
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + [enc].concat(filas).filter(f => f && f.length).map(f => f.map(celda).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'VAO_' + VAO.prefijo + '_' + clave + '_' + VAO.hoy() + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    VAO.msg('msgDesc', '✅ ' + nombre + ' descargada (' + filas.length + (filas.length === 1 ? ' registro)' : ' registros)'), 'ok');
+  } catch (e) { VAO.msg('msgDesc', e && e.message && e.message !== 'Failed to fetch' ? e.message : VAO.sinConexion, 'error'); }
+  hojas();
+}
+function pesos(v) { return v === '' || v == null ? '—' : VAO.pesos(v); }
+function lineas(c) {
+  const L = [];
+  if (c.tipo === 'AJUSTE') {
+    if (c.nombreDespues) L.push('Nombre: ' + c.nombreAntes + ' → ' + c.nombreDespues);
+    if (c.stockAntes !== '' && c.stockDespues !== '' && c.stockAntes !== c.stockDespues) L.push('Stock: ' + c.stockAntes + ' → ' + c.stockDespues);
+    if (c.precioDespues !== '' && c.precioDespues !== c.precioAntes) L.push('Precio: ' + pesos(c.precioAntes) + ' → ' + pesos(c.precioDespues));
+    if (c.categoriaDespues) L.push('Categoría: ' + (c.categoriaAntes || '—') + ' → ' + c.categoriaDespues);
+  } else L.push('Ingresó +' + c.cantidad + (c.costo !== '' ? ' · costo ' + pesos(c.costo) : '') + (c.proveedor ? ' · ' + c.proveedor : ''));
+  return L;
+}
+function pintarCambios() {
+  const q = $('filtro').value.trim().toUpperCase(), vis = CAMBIOS.filter(c => !q || String(c.producto).toUpperCase().includes(q));
+  $('cambios').innerHTML = vis.length ? vis.slice(0, 200).map(c => '<div class="hc"><small>' + VAO.esc(new Date(c.fecha).toLocaleString('es-AR')) + ' · ' + (c.tipo === 'AJUSTE' ? '✏️ Ajuste' : '📦 Ingreso') + '</small><br><b>' + VAO.esc(c.producto) + '</b><br>' + lineas(c).map(VAO.esc).join('<br>') + '</div>').join('')
+    : VAO.vacio('🕵️', CAMBIOS.length ? 'Ningún cambio de ese producto.' : 'Todavía no hay cambios registrados.');
+}
+async function cambios() {
+  $('cambios').innerHTML = 'Cargando…';
+  try { const r = await VAO.api('getCambios', { limite: 300 }); if (!r.success) { $('cambios').innerHTML = VAO.vacio('⚠️', r.error || 'No se pudo cargar.'); return; } CAMBIOS = r.cambios || []; pintarCambios(); }
+  catch (e) { $('cambios').innerHTML = VAO.vacio('📡', VAO.sinConexion); }
+}
+VAO.iniciar({ modulo: null, titulo: 'Mis datos', icono: '🏪', grupo: 'P1' }).then(ok => {
+  if (!ok) return;
+  VAO.pestanas('tabs', t => { if (t === 'descargas') hojas(); if (t === 'cambios') cambios(); });
+  $('btnGuardar').onclick = guardar; $('filtro').oninput = pintarCambios; plan(); datos();
+});
+</script>
+</body>
+</html>

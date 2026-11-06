@@ -133,7 +133,7 @@ async function guardarPremio() {
   VAO.msg('msgP', r.success ? r.mensaje : r.error, r.success ? 'ok' : 'error'); if (r.success) { nuevoP(); cargarPremios(); }
 }
 function nuevoP() { EDIT = null; PROD_P = null; $('tituloForm').textContent = 'Agregar premio'; $('pNombre').value = ''; $('pCant').value = 10; $('pPeso').value = 10; $('pActivo').checked = true; pintarProdP(); }
-VAO.iniciar({ modulo: 'extra_raspadita', titulo: 'Raspadita y tragamonedas', icono: '🎁', grupo: 'P3' }).then(async ok => {
+VAO.iniciar({ modulo: 'extra_raspadita', titulo: 'Raspadita y tragamonedas', icono: '🎁', grupo: 'C' }).then(async ok => {
   if (!ok) return;
   VAO.pestanas('tabs', t => { if (t === 'pendientes' || t === 'historial') cargarPendientes(); if (t === 'premios') cargarPremios(); });
   document.querySelectorAll('[data-modo]').forEach(b => b.onclick = () => elegirModo(b.dataset.modo)); elegirModo('RASPADITA');

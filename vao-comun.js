@@ -1,4 +1,5 @@
-/* vao-comun.js — v044 (STAGING AR). Base compartida de los módulos de VAO POS.
+/* vao-comun.js — v044.1 (STAGING AR). v044.1: aplicaciones base (sin prestación), menú para cambiar de aplicación con la misma sesión, P3 PRO.
+   v044: Base compartida de los módulos de VAO POS.
    Un solo lugar para: dirección del servidor, sesión del comercio (el mismo PIN/token del POS), permisos por plan,
    navegación de vuelta al POS, mensajes y formato. Cada módulo es un HTML independiente que usa esta base.
    La pantalla solo muestra: cada acción la vuelve a validar el servidor (sesión, plan y complemento contratado). */
@@ -8,7 +9,7 @@
   var qs = new URLSearchParams(location.search);
   var PREFIJO = String(qs.get('p') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
   var TOKEN_KEY = 'vao_token_' + PREFIJO;
-  var VAO = window.VAO = { prefijo: PREFIJO, config: null, prestaciones: null, soloLectura: false, version: 'v044' };
+  var VAO = window.VAO = { prefijo: PREFIJO, config: null, prestaciones: null, soloLectura: false, version: 'v044.1' };
 
   VAO.token = function () { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } };
   VAO.esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -53,8 +54,8 @@
     document.documentElement.setAttribute('data-grupo', opts.grupo || 'P3');
     var cab = document.getElementById('vaoCabecera');
     if (cab) cab.innerHTML = '<a class="vao-volver" href="' + VAO.urlPos() + '" aria-label="Volver al POS">← POS</a>' +
-      '<div class="vao-tit"><span class="vao-sello">' + VAO.esc(opts.grupo || 'P3') + '</span><h1>' + VAO.esc((opts.icono ? opts.icono + ' ' : '') + opts.titulo) + '</h1></div>' +
-      '<div class="vao-comercio" id="vaoComercio">' + VAO.esc(PREFIJO) + '</div>';
+      '<div class="vao-tit"><span class="vao-sello" title="' + VAO.esc({ P1: 'P1 Esencial', P2: 'P2 Gestión', P3: 'P3 PRO', C: 'Complemento opcional' }[opts.grupo] || '') + '">' + VAO.esc({ P1: 'P1', P2: 'P2', P3: 'PRO', C: '➕' }[opts.grupo] || 'P1') + '</span><h1>' + VAO.esc((opts.icono ? opts.icono + ' ' : '') + opts.titulo) + '</h1></div>' +
+      '<div class="vao-comercio" id="vaoComercio">' + VAO.esc(PREFIJO) + '</div><button class="vao-apps-btn oculto" id="vaoAppsBtn" aria-label="Otras aplicaciones" title="Otras aplicaciones">☰</button>';
     document.title = '[STAGING] ' + opts.titulo + ' · VAO POS';
     var bloqueo = document.getElementById('vaoBloqueo'), cont = document.getElementById('vaoContenido');
     var mostrar = function (html) { bloqueo.innerHTML = html; bloqueo.classList.remove('oculto'); cont.classList.add('oculto'); };
@@ -63,10 +64,11 @@
       if (!r || r.error) { VAO.sesionVencida(r && r.error); return null; }
       VAO.config = r.config || {}; VAO.prestaciones = r.prestaciones || null; VAO.soloLectura = !!(VAO.config.modoConsulta);
       var nom = VAO.config.nombre_empresa || VAO.config.title || PREFIJO; var cc = document.getElementById('vaoComercio'); if (cc) cc.textContent = nom;
-      var hab = VAO.prestaciones && VAO.prestaciones.modulos ? VAO.prestaciones.modulos[opts.modulo] === true : false;
+      var hab = !opts.modulo ? true : (VAO.prestaciones && VAO.prestaciones.modulos ? VAO.prestaciones.modulos[opts.modulo] === true : false);   // v044.1: sin prestación = base (todos los planes)
+      VAO._menuApps(opts);
       if (!hab) {
         mostrar('<div class="vao-tarjeta vao-centro"><div class="vao-grande">🧩</div><h2>' + VAO.esc(opts.titulo) + ' no está en tu plan</h2>' +
-          '<p>' + (opts.grupo === 'P2' ? 'Es parte del plan P2 Gestión.' : 'Es un complemento que se suma a tu plan.') + ' Pedíselo a VAO Sistemas desde <b>💳 Mi plan</b> en el POS.</p><a class="vao-btn primario" href="' + VAO.urlPos() + '">Volver al POS</a></div>');
+          '<p>' + ({ P2: 'Es parte del plan P2 Gestión.', P3: 'Es parte del paquete P3 PRO.', C: 'Es un complemento opcional que se suma a tu plan.' }[opts.grupo] || 'No está incluida en tu plan.') + ' Si la querés, pedila desde <b>💳 Mi plan</b> en el POS: VAO Sistemas la activa cuando confirma el pago.</p><a class="vao-btn primario" href="' + VAO.urlPos() + '">Volver al POS</a></div>');
         return null;
       }
       if (VAO.soloLectura) { var a = document.getElementById('vaoAviso'); if (a) { a.className = 'vao-msg aviso'; a.textContent = '🔒 Tu plan está vencido o suspendido: podés consultar, pero no registrar operaciones nuevas.'; } document.documentElement.classList.add('vao-solo-lectura'); }
@@ -75,6 +77,24 @@
     }).catch(function () { mostrar('<div class="vao-tarjeta vao-centro"><div class="vao-grande">📡</div><h2>Sin conexión</h2><p>No se pudo verificar tu sesión. Revisá internet y recargá la página.</p><button class="vao-btn primario" onclick="location.reload()">Reintentar</button></div>'); return null; });
   };
 
+
+  // v044.1: menú de aplicaciones (solo las páginas que habilita el plan; la lista viene de la matriz central del servidor)
+  VAO._menuApps = function (opts) {
+    var apps = (VAO.prestaciones && VAO.prestaciones.apps) || [], b = document.getElementById('vaoAppsBtn');
+    var vis = apps.filter(function (a) { return a.pagina && a.habilitada && (!a.soloAndroid || VAO.esAndroid()); });
+    if (!b || !vis.length) return;
+    b.classList.remove('oculto');
+    var nom = { P1: 'P1 Esencial', P2: 'P2 Gestión', P3: 'P3 PRO', C: 'Complementos' }, actual = (location.pathname.split('/').pop() || '');
+    b.onclick = function () {
+      var m = document.createElement('div'); m.className = 'vao-modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-label', 'Aplicaciones');
+      var html = '<div><h2 style="margin:0 0 6px">Aplicaciones</h2><div class="vao-apps"><a href="' + VAO.urlPos() + '"><span class="i">🛒</span>Vender (POS)</a>';
+      ['P1', 'P2', 'P3', 'C'].forEach(function (g) { var l = vis.filter(function (a) { return a.grupo === g; }); if (!l.length) return;
+        html += '<h3>' + nom[g] + '</h3>' + l.map(function (a) { return '<a href="' + VAO.esc(a.destino) + '?p=' + encodeURIComponent(PREFIJO) + '"' + (a.destino === actual ? ' class="actual" aria-current="page"' : '') + '><span class="i">' + VAO.esc(a.icono) + '</span>' + VAO.esc(a.nombre) + '</a>'; }).join(''); });
+      m.innerHTML = html + '</div><div class="vao-fila" style="margin-top:10px"><button class="vao-btn" id="vaoAppsCerrar">Cerrar</button></div></div>';
+      document.body.appendChild(m); m.addEventListener('click', function (e) { if (e.target === m) m.remove(); }); m.querySelector('#vaoAppsCerrar').onclick = function () { m.remove(); };
+    };
+  };
+  VAO.vacio = function (icono, texto) { return '<div class="vao-vacio"><span class="i">' + icono + '</span>' + VAO.esc(texto) + '</div>'; };
 
   // Operador: quién hace la operación (se recuerda en este equipo, nunca se guarda un PIN)
   VAO.operador = function (v) { var k = 'vao_operador_' + PREFIJO; try { if (v !== undefined) localStorage.setItem(k, v); return localStorage.getItem(k) || ''; } catch (e) { return v || ''; } };
