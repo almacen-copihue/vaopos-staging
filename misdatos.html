@@ -9,13 +9,24 @@
 <link rel="stylesheet" href="vao-comun.css">
 <title>[STAGING] Mis datos · VAO POS</title>
 <style>
-/* misdatos.html v1 (v044.1) — base, en todos los planes. Datos del comercio, su plan, descargas e historial de cambios.
+/* misdatos.html v1.1 (v044.2: pestaña ⚙️ Ajustes — botones que usás en P2/P3 y tu cotización de monedas con fecha) · v1 (v044.1) — base, en todos los planes. Datos del comercio, su plan, descargas e historial de cambios.
    Antes era una ventana del POS que además mezclaba la revisión de inventario (ahora en inventario.html, P2). */
 .plan-ficha { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .plan-sello { font-weight: 900; color: #fff; border-radius: 12px; padding: 8px 12px; background: #1E88E5; }
 .plan-sello.PRO { background: #7E57C2; } .plan-sello.PLUS { background: linear-gradient(135deg, #8A5A00, #D4A017); } .plan-sello.PRUEBA { background: #2E8B57; }
 .hc { border-bottom: 1px solid var(--borde); padding: 8px 2px; }
 .hc small { color: var(--suave); }
+/* v1.1 (v044.2): ⚙️ Ajustes — botones que usás (P2/P3) y monedas (con Cobro avanzado) */
+.aj-apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.aj-app { display: flex; align-items: center; gap: 8px; border: 2px solid var(--borde); border-radius: 12px; padding: 8px 10px; min-height: 48px; cursor: pointer; background: var(--papel); }
+.aj-app input { width: 20px; height: 20px; flex: 0 0 auto; accent-color: #2E8B57; }
+.aj-app .ic { font-size: 1.2rem; } .aj-app .nm { font-weight: 700; font-size: .86rem; flex: 1; min-width: 0; }
+.aj-app.off { opacity: .55; border-style: dashed; } .aj-app.fija { cursor: default; }
+.aj-app small { display: block; font-weight: 400; color: var(--suave); font-size: .7rem; }
+.aj-grupo { grid-column: 1 / -1; font-size: .74rem; font-weight: 800; color: var(--suave); text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; }
+.aj-mon { border: 2px solid var(--borde); border-radius: 12px; padding: 10px; margin-bottom: 10px; }
+.aj-mon h3 { margin: 0 0 6px; font-size: .95rem; } .aj-fecha { font-size: .8rem; color: var(--suave); margin: 2px 0 6px; }
+.aj-revisar { background: #FFF4D6; color: #6B4A00; border-radius: 10px; padding: 8px 10px; font-size: .84rem; margin: 6px 0; }
 </style>
 </head>
 <body>
@@ -25,6 +36,7 @@
   <div id="vaoAviso" class="oculto"></div>
   <nav class="vao-pestanas" id="tabs" role="tablist">
     <button data-tab="comercio" class="activo">🏪 Mi comercio</button>
+    <button data-tab="ajustes">⚙️ Ajustes</button>
     <button data-tab="descargas">📥 Descargas</button>
     <button data-tab="cambios">🕵️ Historial de cambios</button>
   </nav>
@@ -37,6 +49,13 @@
       <div id="msgDatos" class="oculto"></div>
       <button class="vao-btn primario vao-escribe" id="btnGuardar">Guardar cambios</button>
     </div>
+  </section>
+  <section data-panel="ajustes" class="oculto">
+    <div class="vao-tarjeta"><h2>🧩 Botones que usás</h2>
+      <p style="margin:0 0 8px;color:var(--suave);font-size:.86rem">Destildá lo que no usás y desaparece de tu POS. No cambia tu plan ni tu precio, y no se borra nada: lo volvés a mostrar desde acá cuando quieras.</p>
+      <div id="ajApps">Cargando…</div><div id="msgAj" class="oculto"></div>
+      <button class="vao-btn primario vao-escribe oculto" id="btnAjGuardar">Guardar botones</button></div>
+    <div class="vao-tarjeta" id="ajMonedas"><h2>💱 Monedas que aceptás</h2><div id="ajMon">Cargando…</div><div id="msgMon" class="oculto"></div></div>
   </section>
   <section data-panel="descargas" class="oculto">
     <div class="vao-tarjeta"><h2>Tus registros son tuyos</h2>
@@ -133,9 +152,64 @@ async function cambios() {
   try { const r = await VAO.api('getCambios', { limite: 300 }); if (!r.success) { $('cambios').innerHTML = VAO.vacio('⚠️', r.error || 'No se pudo cargar.'); return; } CAMBIOS = r.cambios || []; pintarCambios(); }
   catch (e) { $('cambios').innerHTML = VAO.vacio('📡', VAO.sinConexion); }
 }
+// ── v1.1 (v044.2): ⚙️ Ajustes ──
+const GRUPO_AJ = { P1: 'P1 · Esencial', P2: 'P2 · Gestión', P3: 'P3 · PRO', C: '➕ Complementos' };
+const MON_AJ = { USD: { nombre: 'Dólar', ej: '1200' }, CLP: { nombre: 'Peso chileno', ej: '1,3' } };
+let AJ = null;
+async function ajustes() {
+  $('ajApps').textContent = 'Cargando…';
+  try { AJ = await VAO.api('getAjustes', {}); } catch (e) { $('ajApps').innerHTML = VAO.vacio('📡', VAO.sinConexion); return; }
+  if (!AJ.success) { $('ajApps').innerHTML = VAO.vacio('⚠️', AJ.error || 'No se pudo cargar.'); return; }
+  const andr = /Android/i.test(navigator.userAgent || '');
+  if (!AJ.puedeOcultar) {
+    $('ajApps').innerHTML = VAO.vacio('🧩', AJ.motivoNoOcultar + ' Con tu plan ves solo lo que usás todos los días.');
+    $('btnAjGuardar').classList.add('oculto');
+  } else {
+    let h = '<div class="aj-apps">', g0 = '';
+    AJ.apps.filter(a => !a.soloAndroid || andr).forEach(a => {
+      if (a.grupo !== g0) { g0 = a.grupo; h += '<div class="aj-grupo">' + VAO.esc(GRUPO_AJ[a.grupo] || a.grupo) + '</div>'; }
+      h += '<label class="aj-app' + (a.oculta ? ' off' : '') + (a.fija ? ' fija' : '') + '"><input type="checkbox" data-app="' + VAO.esc(a.id) + '"' + (a.oculta ? '' : ' checked') + (a.fija ? ' disabled' : '') + '>' +
+           '<span class="ic">' + VAO.esc(a.icono) + '</span><span class="nm">' + VAO.esc(a.nombre) + (a.fija ? '<small>siempre visible</small>' : '') + '</span></label>';
+    });
+    $('ajApps').innerHTML = h + '</div>';
+    $('ajApps').querySelectorAll('input[data-app]').forEach(i => i.onchange = () => i.closest('.aj-app').classList.toggle('off', !i.checked));
+    $('btnAjGuardar').classList.remove('oculto');
+  }
+  monedas();
+}
+async function guardarOcultos() {
+  const ocultos = [...$('ajApps').querySelectorAll('input[data-app]')].filter(i => !i.checked && !i.disabled).map(i => i.dataset.app);
+  $('btnAjGuardar').disabled = true;
+  try { const r = await VAO.api('guardarOcultos', { ocultos }); VAO.msg('msgAj', r.success ? r.mensaje : r.error, r.success ? 'ok' : 'error'); }
+  catch (e) { VAO.msg('msgAj', VAO.sinConexion, 'error'); }
+  finally { $('btnAjGuardar').disabled = false; }
+}
+function monedas() {
+  const m = AJ.monedas || {};
+  if (!m.habilitado) { $('ajMonedas').classList.add('oculto'); return; }
+  $('ajMonedas').classList.remove('oculto');
+  let h = '<p style="margin:0 0 8px;color:var(--suave);font-size:.86rem">Es <b>tu</b> cotización: cuántos pesos aceptás por cada moneda. No es la oficial. Se usa en el 🔀 Cobro mixto. Dejala vacía si no aceptás esa moneda.</p>';
+  ['USD', 'CLP'].forEach(k => {
+    const v = m.cot[k], f = (m.fechas || {})[k];
+    h += '<div class="aj-mon"><h3>' + (k === 'USD' ? '💵' : '🇨🇱') + ' ' + MON_AJ[k].nombre + ' (' + k + ')</h3>' +
+         (v ? '<div class="aj-fecha">' + (f && f.fecha ? 'Último cambio: ' + VAO.esc(f.fecha) + (f.dias === 0 ? ' (hoy)' : ' (hace ' + f.dias + ' día' + (f.dias === 1 ? '' : 's') + ')') : 'Sin fecha de último cambio') + '</div>' : '<div class="aj-fecha">No aceptás esta moneda.</div>') +
+         (v && f && f.revisar ? '<div class="aj-revisar">⚠️ ' + (f.dias === null ? 'No sabemos desde cuándo está esta cotización.' : 'Pasaron ' + f.dias + ' días desde tu último cambio.') + ' Revisá la cotización oficial del día antes de seguir cobrando en esta moneda.</div>' : '') +
+         '<div class="vao-fila"><div class="vao-campo"><label for="cot_' + k + '">1 ' + k + ' = $</label><input id="cot_' + k + '" inputmode="decimal" placeholder="Ej.: ' + MON_AJ[k].ej + '" value="' + (v ? String(v).replace('.', ',') : '') + '"></div></div>' +
+         '<button class="vao-btn primario vao-escribe" data-mon="' + k + '">Guardar ' + MON_AJ[k].nombre.toLowerCase() + '</button></div>';
+  });
+  $('ajMon').innerHTML = h;
+  $('ajMon').querySelectorAll('[data-mon]').forEach(b => b.onclick = async () => {
+    const k = b.dataset.mon; b.disabled = true;
+    try { const r = await VAO.api('setMiCotizacion', { moneda: k, valor: $('cot_' + k).value.trim() }); VAO.msg('msgMon', r.success ? r.mensaje : r.error, r.success ? 'ok' : 'error'); if (r.success) { AJ = await VAO.api('getAjustes', {}); monedas(); } }
+    catch (e) { VAO.msg('msgMon', VAO.sinConexion, 'error'); }
+    finally { b.disabled = false; }
+  });
+}
 VAO.iniciar({ modulo: null, titulo: 'Mis datos', icono: '🏪', grupo: 'P1' }).then(ok => {
   if (!ok) return;
-  VAO.pestanas('tabs', t => { if (t === 'descargas') hojas(); if (t === 'cambios') cambios(); });
+  VAO.pestanas('tabs', t => { if (t === 'descargas') hojas(); if (t === 'cambios') cambios(); if (t === 'ajustes') ajustes(); });
+  $('btnAjGuardar').onclick = guardarOcultos;
+  if (location.hash === '#ajustes') { VAO.irA($('tabs'), 'ajustes'); ajustes(); }
   $('btnGuardar').onclick = guardar; $('filtro').oninput = pintarCambios; plan(); datos();
 });
 </script>

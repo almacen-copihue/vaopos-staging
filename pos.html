@@ -229,6 +229,18 @@ body {
     .planes-cuenta { flex-direction: row; justify-content: flex-end; }
     .btn-cuenta { min-height: 34px; padding: 5px 12px; }
 }
+/* V43.2: en el celular las tarjetas se pliegan (acordeón: una abierta, las demás en una línea con sus íconos) */
+.tp-mini, .tp-flecha { display: none; }
+.btn-cuenta.p3pro { background: linear-gradient(135deg, #8A5A00, #D4A017 60%, #F3D27A); color: #241800; }
+@media (max-width: 599px) {
+    .planes-pos.plegable .tarjeta-plan .tp-cab { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .planes-pos.plegable .tp-flecha { display: inline-block; margin-left: auto; flex: 0 0 auto; color: var(--tp-tinta); font-weight: 900; font-size: .8rem; transition: transform .15s; }
+    .planes-pos.plegable .tarjeta-plan:not(.plegada) .tp-flecha { transform: rotate(90deg); }
+    .planes-pos.plegable .tarjeta-plan.plegada { padding-top: 5px; padding-bottom: 5px; }
+    .planes-pos.plegable .tarjeta-plan.plegada .tp-botones { display: none; }
+    .planes-pos.plegable .tarjeta-plan.plegada .tp-desc { display: none; }
+    .planes-pos.plegable .tarjeta-plan.plegada .tp-mini { display: inline-flex; gap: 3px; font-size: .85rem; min-width: 0; overflow: hidden; white-space: nowrap; }
+}
 .mp-grupo { font-weight: 800; font-size: 0.8rem; color: #0A2472; margin: 10px 0 4px; }
 .mp-chip { display: inline-block; background: #EEF4FB; color: #0A2472; border-radius: 8px; padding: 3px 8px; font-size: 0.8rem; margin: 0 4px 4px 0; }
 .mp-chip.off { background: #FFEBEE; color: #B71C1C; }
@@ -862,6 +874,7 @@ body {
         </div>
     </section>
     <div class="planes-cuenta">
+        <button class="btn-cuenta p3pro" id="btnVerP3" onclick="abrirPagoPlan()" style="display:none" title="Conocé P3 PRO: el plan completo" aria-label="Conocé P3 PRO">✨ <span>P3 PRO</span></button>
         <button class="btn-cuenta" id="btnMiPlan" onclick="abrirPagoPlan()" title="Mi plan" aria-label="Mi plan">💳 <span>Mi plan</span></button>
         <button class="btn-cuenta salir" onclick="confirmarSalir()" aria-label="Salir">🚪 <span>Salir</span></button>
     </div>
@@ -1158,7 +1171,7 @@ if (!/^[A-Z0-9]{2,10}$/.test(PREFIJO)) {
 
 // ========== CONFIG ==========
 const API_URL  = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
-const APP_VERSION = 43; // V43.1: «Mi plan» con tarjetas (P2 abraza a P1, P3 abraza a P2; P2 recomendado; tu plan marcado) · V43 (v044.1): botonera desde la MATRIZ CENTRAL de aplicaciones del servidor (un botón por aplicación y su destino); Clientes abre clientes.html (antes Fiados), Mis datos abre misdatos.html e Inventario abre inventario.html (antes los dos abrían la misma ventana); tarjeta P3 PRO (paquete completo) y tarjeta ➕ Complementos (Cobro mixto, Monedas, Juego); Mi plan con P1/P2/P3 PRO y lo que suma cada uno · V42 (v044): la tarjeta P3 muestra cada complemento contratado (cotización, compras, salidas, finanzas, mis deudas, egresos, juego, voz) y abre su pantalla; P2 suma ↩️ Anular venta; 💳 Mi plan coherente (nombres del servidor, sin «Pagar» si el pago en línea está apagado: se pide a VAO) · V41 (v043): las funciones se muestran en TARJETAS por plan — P1 · Esencial, P2 · Gestión y P3 · Complementos — cada una con título, descripción y sus botones; solo las contratadas (sin tarjetas vacías ni botones bloqueados); en celular se apilan · V40 (v043): la barra se arma por plan — P1 Esencial (Ingresar, Hoy, Fiados) y P2 Gestión (Ajustar, Reportes) en grupos; se ve solo lo contratado y habilitado; 🔀 Mixto solo con el complemento Cobro avanzado; ✔️ Revisar inventario solo con P2; 💳 Mi plan muestra tu plan, complementos y vencimiento y permite pedir cambios por WhatsApp · V39: 🔀 Mixto (solo si VAO prende el cobro avanzado): varios medios, monedas, vuelto, fiar lo que falta o cobrar deuda, con Revisar antes de cobrar y reintento sin duplicar; Hoy muestra la caja del servidor (todos los equipos); Mis datos → ✔️ Revisar inventario (solo lectura) · V38: al fiar avisa si el cliente ya debe (solo lectura, no bloquea) · V37: sin 🏠 en el encabezado (cerraba la sesión); Salir pide confirmación; '¿Perdiste o te robaron el celular?' en la pantalla del PIN · V36: PIN oculto ●●●●●● con 👁️; 📣 Compartir con el afiche (menú del celular: elegís WhatsApp Business); PIN: cierra el teclado y muestra ⏳ Verificando visible arriba; aviso único de versión nueva · V35: 📣 comparte planes.html?v=N (WhatsApp guarda la vista previa vieja de un link ya enviado) · V34: botón 💬 Soporte por WhatsApp a VAO Sistemas (encabezado y pantalla del PIN) · V33: app instalable (manifest + service worker sin copias) y recuerda el último comercio · V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
+const APP_VERSION = 43; // V43.2: botones ocultos por el comercio (P2/P3, Mis datos → ⚙️ Ajustes) y cotización propia con fecha (aviso a los 7 días) · en el celular las tarjetas se pliegan (una abierta, las demás en una línea con sus íconos; se recuerda cuál) · pastilla dorada «✨ P3 PRO» que abre Mi plan para quien no tiene P3 · V43.1: «Mi plan» con tarjetas (P2 abraza a P1, P3 abraza a P2; P2 recomendado; tu plan marcado) · V43 (v044.1): botonera desde la MATRIZ CENTRAL de aplicaciones del servidor (un botón por aplicación y su destino); Clientes abre clientes.html (antes Fiados), Mis datos abre misdatos.html e Inventario abre inventario.html (antes los dos abrían la misma ventana); tarjeta P3 PRO (paquete completo) y tarjeta ➕ Complementos (Cobro mixto, Monedas, Juego); Mi plan con P1/P2/P3 PRO y lo que suma cada uno · V42 (v044): la tarjeta P3 muestra cada complemento contratado (cotización, compras, salidas, finanzas, mis deudas, egresos, juego, voz) y abre su pantalla; P2 suma ↩️ Anular venta; 💳 Mi plan coherente (nombres del servidor, sin «Pagar» si el pago en línea está apagado: se pide a VAO) · V41 (v043): las funciones se muestran en TARJETAS por plan — P1 · Esencial, P2 · Gestión y P3 · Complementos — cada una con título, descripción y sus botones; solo las contratadas (sin tarjetas vacías ni botones bloqueados); en celular se apilan · V40 (v043): la barra se arma por plan — P1 Esencial (Ingresar, Hoy, Fiados) y P2 Gestión (Ajustar, Reportes) en grupos; se ve solo lo contratado y habilitado; 🔀 Mixto solo con el complemento Cobro avanzado; ✔️ Revisar inventario solo con P2; 💳 Mi plan muestra tu plan, complementos y vencimiento y permite pedir cambios por WhatsApp · V39: 🔀 Mixto (solo si VAO prende el cobro avanzado): varios medios, monedas, vuelto, fiar lo que falta o cobrar deuda, con Revisar antes de cobrar y reintento sin duplicar; Hoy muestra la caja del servidor (todos los equipos); Mis datos → ✔️ Revisar inventario (solo lectura) · V38: al fiar avisa si el cliente ya debe (solo lectura, no bloquea) · V37: sin 🏠 en el encabezado (cerraba la sesión); Salir pide confirmación; '¿Perdiste o te robaron el celular?' en la pantalla del PIN · V36: PIN oculto ●●●●●● con 👁️; 📣 Compartir con el afiche (menú del celular: elegís WhatsApp Business); PIN: cierra el teclado y muestra ⏳ Verificando visible arriba; aviso único de versión nueva · V35: 📣 comparte planes.html?v=N (WhatsApp guarda la vista previa vieja de un link ya enviado) · V34: botón 💬 Soporte por WhatsApp a VAO Sistemas (encabezado y pantalla del PIN) · V33: app instalable (manifest + service worker sin copias) y recuerda el último comercio · V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
 const HOY_KEY    = 'vao_ventas_' + PREFIJO + '_' + new Date().toISOString().slice(0, 10);
 const CARRITO_KEY= 'vao_carrito_' + PREFIJO;
 
@@ -1223,15 +1236,51 @@ function generarToolbarSegunPacks(config) {
         el.style.display = [...el.querySelectorAll('.btn-tool')].some(b => b.style.display !== 'none') ? '' : 'none';
     });
     const inv = document.getElementById('btnRevisarInv'); if (inv) inv.style.display = config.pack2_editor_stock === true ? '' : 'none'; // V40: revisión de inventario = P2
+    _plegablesV432_();
+}
+
+// V43.2: tarjetas plegables en el celular. Con más de una tarjeta, queda una abierta y las demás en una línea con sus íconos;
+// tocar el título abre esa y pliega las otras. Se recuerda cuál quedó abierta (solo en este equipo). En tablet y computadora no cambia nada.
+// También: pastilla dorada «✨ P3 PRO» (abre Mi plan) para quien todavía no tiene P3 PRO.
+function _claveTarjetaV432_() { return 'vao_tarjeta_' + (typeof PREFIJO !== 'undefined' ? PREFIJO : ''); }
+function _plegablesV432_() {
+    const cont = document.getElementById('planesPos'); if (!cont) return;
+    const vis = ['tarjetaP1', 'tarjetaP2', 'tarjetaP3', 'tarjetaC'].map(id => document.getElementById(id)).filter(t => t && t.style.display !== 'none');
+    vis.forEach(function (t) {
+        const cab = t.querySelector('.tp-cab'); if (!cab) return;
+        let mini = cab.querySelector('.tp-mini'); if (!mini) { mini = document.createElement('span'); mini.className = 'tp-mini'; mini.setAttribute('aria-hidden', 'true'); cab.querySelector('div').appendChild(mini); }
+        mini.textContent = [...t.querySelectorAll('.btn-tool')].filter(b => b.style.display !== 'none').map(b => (b.querySelector('.ico') || {}).textContent || '').join(' ');
+        if (!cab.querySelector('.tp-flecha')) { const f = document.createElement('span'); f.className = 'tp-flecha'; f.textContent = '▸'; f.setAttribute('aria-hidden', 'true'); cab.appendChild(f); }
+        if (!cab.dataset.v432) {
+            cab.dataset.v432 = '1'; cab.setAttribute('tabindex', '0'); cab.setAttribute('role', 'button');
+            cab.addEventListener('click', function () { _abrirTarjetaV432_(t.id, true); });
+            cab.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _abrirTarjetaV432_(t.id, true); } });
+        }
+    });
+    cont.classList.toggle('plegable', vis.length > 1);
+    let abierta = null; try { abierta = localStorage.getItem(_claveTarjetaV432_()); } catch (e) {}
+    if (!vis.some(t => t.id === abierta)) abierta = vis.length ? vis[0].id : null;
+    _abrirTarjetaV432_(abierta, false);
+    const apps = _appsV43_(), p3 = document.getElementById('btnVerP3');
+    if (p3) p3.style.display = (PRESTACIONES_ACTUAL && PRESTACIONES_ACTUAL.planesP1P2P3 && apps && !apps.some(a => a.grupo === 'P3' && a.habilitada)) ? '' : 'none';
+}
+function _abrirTarjetaV432_(id, guardar) {
+    ['tarjetaP1', 'tarjetaP2', 'tarjetaP3', 'tarjetaC'].forEach(function (g) {
+        const t = document.getElementById(g); if (!t) return;
+        const abierta = g === id; t.classList.toggle('plegada', !abierta);
+        const cab = t.querySelector('.tp-cab'); if (cab) cab.setAttribute('aria-expanded', abierta ? 'true' : 'false');
+    });
+    if (guardar && id) { try { localStorage.setItem(_claveTarjetaV432_(), id); } catch (e) {} }
 }
 
 // V43 (v044.1): botonera desde la MATRIZ CENTRAL (getConfig.prestaciones.apps): cada aplicación tiene un solo botón y su destino.
 const BOTON_APP_V43_ = { btnIngreso: 'ingresar', btnHoy: 'hoy', btnFiados: 'fiados', btnMisDatos: 'misdatos', btnAjuste: 'ajustar', btnInventarioP2: 'inventario',
                          btnReportes: 'reportes', btnClientesP2: 'clientes', btnAnularP2: 'anular', btnCobroAvanzado: 'mixto', btnCotizaciones: 'monedas' };
 function _appsV43_() { return (PRESTACIONES_ACTUAL && PRESTACIONES_ACTUAL.apps) || null; }
+function _ocultosV432_() { return (PRESTACIONES_ACTUAL && Array.isArray(PRESTACIONES_ACTUAL.ocultos)) ? PRESTACIONES_ACTUAL.ocultos : []; }   // V43.2 (servidor v044.2)
 function _aplicarAppsV43_(botones) {
     const apps = _appsV43_(); if (!apps) return;
-    const hab = {}; apps.forEach(a => { hab[a.id] = a.habilitada === true; });
+    const hab = {}, ocu = _ocultosV432_(); apps.forEach(a => { hab[a.id] = a.habilitada === true && ocu.indexOf(a.id) === -1; });   // V43.2: lo que el comercio ocultó en Mis datos → Ajustes (no cambia el permiso)
     Object.keys(BOTON_APP_V43_).forEach(id => {
         const b = document.getElementById(id); if (!b) return;
         const ok = hab[BOTON_APP_V43_[id]] === true && (id !== 'btnAnularP2' || !(CONFIG_ACTUAL && CONFIG_ACTUAL.modoConsulta)) &&
@@ -1247,7 +1296,7 @@ function _pintarComplementosP3V42_(config) {
     if (apps) {   // V43: páginas del paquete P3 PRO en su tarjeta; las páginas de complementos opcionales en la tarjeta ➕
         const andr = /Android/i.test(navigator.userAgent || '');
         const btn = a => '<button class="btn-tool p3mod" id="btnApp_' + _escHTML(a.id) + '" title="' + _escHTML(a.descripcion || a.nombre) + '" onclick="window.location.href=\'' + _escHTML(a.destino) + '?p=\'+PREFIJO"><span class="ico">' + _escHTML(a.icono) + '</span><span class="txt">' + _escHTML(a.nombre) + '</span></button>';
-        const vis = g => apps.filter(a => a.grupo === g && a.pagina && a.habilitada && (!a.soloAndroid || andr));
+        const ocu = _ocultosV432_(), vis = g => apps.filter(a => a.grupo === g && a.pagina && a.habilitada && ocu.indexOf(a.id) === -1 && (!a.soloAndroid || andr));
         box.innerHTML = vis('P3').map(btn).join('');
         const cbox = document.getElementById('cComplementos'); if (cbox) cbox.innerHTML = vis('C').map(btn).join('');
         const t = document.getElementById('tarjetaP3'); if (t) t.classList.toggle('muchos', vis('P3').length > 4);
@@ -1273,8 +1322,10 @@ function abrirCobroAvanzadoV41() {
 }
 function verCotizacionesV41() {
     const c = (COBRO_ACTUAL && COBRO_ACTUAL.cot) || {};
-    const l = Object.keys(c).filter(k => Number(c[k]) > 0).map(k => '1 ' + k + ' = $' + Number(c[k]).toLocaleString('es-AR'));
-    mostrarToast('💱 ' + (l.length ? l.join(' · ') + ' (las carga VAO Sistemas)' : 'Sin cotizaciones cargadas'), 'verde');
+    const f = (COBRO_ACTUAL && COBRO_ACTUAL.fechas) || {};
+    const l = Object.keys(c).filter(k => Number(c[k]) > 0).map(k => '1 ' + k + ' = $' + Number(c[k]).toLocaleString('es-AR') + (f[k] && f[k].fecha ? ' (' + f[k].fecha + ')' : ''));
+    const rev = Object.keys(f).some(k => f[k] && f[k].revisar);
+    mostrarToast('💱 ' + (l.length ? 'Tu cotización: ' + l.join(' · ') + (rev ? ' · ⚠️ Hace más de 7 días: revisá la oficial y actualizala en Mis datos → ⚙️ Ajustes' : '') : 'Sin cotizaciones cargadas: se cargan en Mis datos → ⚙️ Ajustes'), rev ? 'naranja' : 'verde');
 }
 function abrirRevisionInventarioV41() { window.location.href = 'inventario.html?p=' + PREFIJO; }   // V43: Inventario es su propia aplicación (antes abría Mis datos)
 
@@ -2550,12 +2601,19 @@ function mxCambio() {
     const total = _mxTotal(), dif = Math.round((pagado - total) * 100) / 100;
     document.getElementById('mxResumen').innerHTML = 'Total: <b>' + _mxFmt(total) + '</b> · Pagado: <b>' + _mxFmt(pagado) + '</b><br>' +
         (dif < 0 ? 'Falta: <b style="color:#c62828">' + _mxFmt(-dif) + '</b>' : 'Vuelto (en pesos): <b style="color:#1b5e20">' + _mxFmt(dif) + '</b>') +
-        (sinCot ? '<br>⚠️ Hay una moneda sin cotización.' : '');
+        (sinCot ? '<br>⚠️ Hay una moneda sin cotización.' : '') + _mxAvisoCotV432_();
     if (!_leerVentaEnCurso()) {
         _mxRevisado = null;
         const p = document.getElementById('mxPrevia'); p.className = 'mx-previa'; p.textContent = '';
         const b = document.getElementById('btnOkConfirm'); if (b && !b.disabled) b.textContent = '🔎 Revisar cobro';
     }
+}
+// V43.2: en el cobro con moneda extranjera, recordar que la cotización es la del comercio y si hace más de 7 días que no se cambia.
+function _mxAvisoCotV432_() {
+    const cot = (COBRO_ACTUAL && COBRO_ACTUAL.cot) || {}, f = (COBRO_ACTUAL && COBRO_ACTUAL.fechas) || {};
+    const usadas = [...new Set(_mxLineas.filter(l => l.moneda && l.moneda !== 'ARS' && cot[l.moneda]).map(l => l.moneda))];
+    return usadas.map(k => '<br><small>1 ' + k + ' = ' + _mxFmt(cot[k]) + ' (tu cotización' + (f[k] && f[k].fecha ? ' del ' + f[k].fecha : '') + ')' +
+        (f[k] && f[k].revisar ? ' · <b style="color:#B26A00">⚠️ hace ' + (f[k].dias === null ? 'tiempo' : f[k].dias + ' días') + ' que no la cambiás: revisá la oficial</b>' : '') + '</small>').join('');
 }
 function _mxArmarOp(opId) {
     const op = { opId: opId, items: ventaActual.map(i => ({ id: i.id, codigo: i.codigo || '', name: i.name, qty: i.qty, precioVenta: i.price, precioModificado: i.precioModificado || false, precioOriginal: i.precioOriginal || 0 })),
