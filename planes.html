@@ -158,6 +158,9 @@ ul.hace b { color: var(--tinta); }
 .ic5 { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,.85); border-radius: 999px; padding: 3px 8px; font-size: .8rem; font-weight: 700; color: #1C2533; }
 .p5 .elegir { margin-top: auto; display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--tinta); background: #F4F7FB; border-radius: 12px; padding: 10px; }
 .p5 .elegir input { width: 22px; height: 22px; margin: 0; }
+.p5.PRO { box-shadow: 0 10px 30px rgba(126,87,194,.28); }
+@media (min-width: 1000px) { .p5.PRO { transform: translateY(-10px); } .p5.PRO:hover { transform: translateY(-12px); } }
+.p5 .tag.reco { background: #7E57C2; color: #fff; }
 .p5 .tag { position: absolute; top: -12px; right: 14px; background: linear-gradient(135deg, #8A5A00, #D4A017); color: #241800; font-weight: 900; font-size: .75rem; border-radius: 999px; padding: 3px 10px; }
 .siempre { font-size: .9rem; color: var(--suave); margin: 0 0 12px; }
 .pieza.p3pro { background: linear-gradient(135deg, #8A5A00, #D4A017); color: #241800; }
@@ -458,7 +461,7 @@ function htmlPlanV5(p) {
   let cuerpo = env5(1, 'P1 Esencial', 'P1');
   if (n >= 2) cuerpo = '<div class="env e2"><span class="env-tit">P2 Gestión</span>' + cuerpo + iconos5('P2') + '</div>';
   if (n >= 3) cuerpo = '<div class="env e3"><span class="env-tit">P3 PRO</span>' + cuerpo + iconos5('P3') + '</div>';
-  return '<div class="p5 plan elegible ' + p.codigo + (el ? ' elegido' : '') + '" data-plan="' + esc(p.codigo) + '">' + (n === 3 ? '<span class="tag">COMPLETO</span>' : '') +
+  return '<div class="p5 plan elegible ' + p.codigo + (el ? ' elegido' : '') + '" data-plan="' + esc(p.codigo) + '">' + (n === 3 ? '<span class="tag">COMPLETO</span>' : n === 2 ? '<span class="tag reco">⭐ RECOMENDADO</span>' : '') +
     '<div class="p5-cab"><span class="p5-sello">' + NOM5[p.codigo] + '</span><h3>' + esc(p.nombre) + '</h3></div>' + precio + cuerpo +
     '<label class="elegir"><input type="radio" name="planElegido" value="' + esc(p.codigo) + '"' + (el ? ' checked' : '') + '> Elegir ' + esc(p.nombre) + '</label></div>';
 }
@@ -574,6 +577,7 @@ async function cargarPlanes() {
     CATALOGO = (r.catalogoV043 && r.catalogoV043.migrado) ? r.catalogoV043 : null;   // servidor anterior o planes sin migrar: como antes
     if (CATALOGO) {
       if (ELECCION.plan && !PLANES.some(p => p.codigo === ELECCION.plan)) ELECCION.plan = '';
+      if (!ELECCION.plan && !ELECCION._vista && PLANES.some(p => p.codigo === 'PRO')) { ELECCION.plan = 'PRO'; ELECCION._vista = true; guardarEleccion(); }   // v5: P2 elegido de entrada; si la persona lo cambia o lo quita, se respeta
       const pr = PLANES.find(p => p.codigo === 'PRUEBA'); if (pr && pr.prestaciones) $('tSub').textContent = 'Incluye ' + [...new Set(pr.prestaciones.map(x => CATALOGO.grupos[x.grupo] || x.grupo))].join(' + ');
       pintarPlanesV3(); $('armaTuPlan').classList.remove('oculto'); if (!window._zonasListas) { prepararZonas(); window._zonasListas = true; } pintarComplementos();
     } else {

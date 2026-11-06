@@ -1532,7 +1532,7 @@ function renderPlanes() {
         return;
     }
     if (!planesInfo.existe) {   // V13: el servidor CONFIRMÓ que PLANES_VAO no existe
-        cont.innerHTML = '<p class="ayuda" style="font-size:0.85rem;">Todavía no hay tabla de planes. Se crea la hoja <b>PLANES_VAO</b> con PRUEBA, BÁSICO y PRO; después podés editar cada uno acá. No se modifica ninguna hoja existente.</p>' +
+        cont.innerHTML = '<p class="ayuda" style="font-size:0.85rem;">Todavía no hay tabla de planes. Se crea la hoja <b>PLANES_VAO</b> con Prueba, P1 Esencial (BÁSICO) y P2 Gestión (PRO); P3 PRO se suma con «Activar los planes» (📋 Planes y contrataciones). No se modifica ninguna hoja existente.</p>' +
             '<div id="planesPrevia" class="ayuda" style="margin:10px 0 14px;">Calculando qué cambia para los negocios actuales…</div>' +
             '<button class="btn-primario btn-verde" id="btnInitPlanes" onclick="crearPlanesIniciales()">Crear planes iniciales</button>';
         cargarPreviaPlanes();
@@ -1581,7 +1581,7 @@ async function cargarPreviaPlanes() {
                   afectados.map(i => '<li>' + _esc(i.prefijo) + ' (' + _esc(nombres[i.plan] || i.plan) + '): ' + i.pierde.map(_esc).join(', ') + '</li>').join('') +
                   '</ul>Si no corresponde, después de crear los planes cambiales el plan o editá el plan.'
                 : '<div style="color:#2E7D32;font-weight:700;">✅ Ningún negocio actual pierde módulos que tenga encendidos.</div>') +
-            (noRec.length ? '<div style="margin-top:6px;">Sin cambios (su plan no es PRUEBA/BÁSICO/PRO, siguen como hoy): ' + noRec.map(i => _esc(i.prefijo) + (i.plan ? ' (' + _esc(i.plan) + ')' : '')).join(', ') + '</div>' : '');
+            (noRec.length ? '<div style="margin-top:6px;">Sin cambios (su plan no es Prueba, P1 o P2; siguen como hoy): ' + noRec.map(i => _esc(i.prefijo) + (i.plan ? ' (' + _esc(i.plan) + ')' : '')).join(', ') + '</div>' : '');
     } catch (e) { cont.textContent = 'No se pudo calcular el impacto (sin conexión).'; }
 }
 function _nombreModuloPrevia(clave) {
@@ -1654,7 +1654,7 @@ function renderModulosCliente(res) {
     document.getElementById('pcPlanAyuda').textContent = res.planReconocido ? ('Plan actual: ' + res.planNombre) :
         ('Plan actual "' + (res.plan || 'sin plan') + '" no está en la tabla de planes: hoy manda solo la configuración del negocio. Elegí un plan para ordenarlo.');
     document.getElementById('pcModulosAyuda').innerHTML = res.editable
-        ? 'Plan <b>Personalizado</b>: elegí los módulos uno por uno (dentro de lo que permite PLANES_VAO).'
+        ? 'Plan <b>a medida</b> («Armá tu plan», no se muestra en la página pública): elegí los módulos uno por uno (dentro de lo que permite PLANES_VAO).'
         : 'Los módulos de este plan los define <b>PLANES_VAO</b> y no se cambian uno por uno. Si hay diferencias, usá el checkpoint de arriba. Para elegir módulos sueltos, pasalo a Personalizado.';
     cont.innerHTML = res.modulos.map(m => {
         const motivo = m.permitidoPorPlan === false ? 'el plan no lo incluye' : (!m.interruptor ? 'apagado para este negocio' : '');
@@ -2384,7 +2384,7 @@ async function pc43MigrarVista() {
         ((r.avisos || []).length ? '<div class="ayuda">' + r.avisos.map(_esc).join('<br>') + '</div>' : '') +
         '<b>Comercios que cambian de prestaciones</b><br>' + (r.impacto.length ? r.impacto.map(i => '<div>• <b>' + _esc(i.prefijo) + '</b> (' + _esc(i.plan) + '): ' + i.cambios.map(_esc).join(' · ') + '</div>').join('') : 'Ninguno.') +
         '<div class="ayuda" style="margin-top:6px;">Ventas, pagos, fiados y abonos no se tocan. Se recomienda hacerlo desde el menú de la planilla (opción 5); acá pide operador y motivo.</div>' +
-        (r.cambios.length ? '<button class="btn-accion" style="background:#2E7D32;color:#fff;margin-top:6px;" onclick="pc43MigrarConfirmar()">Confirmar el paso a P1 / P2 / P3</button>' : '') + '</div>';
+        (r.cambios.length ? '<button class="btn-accion" style="background:#2E7D32;color:#fff;margin-top:6px;" onclick="pc43MigrarConfirmar()">Confirmar: activar P1 · P2 · P3 PRO</button>' : '') + '</div>';
 }
 async function pc43MigrarConfirmar() {
     const ok = _pc43Cambio(); if (!ok) return;
@@ -2656,7 +2656,7 @@ async function abrirCheckpointGeneral() {
         if (pl.corregibleFijos) h += '<br><button class="btn-accion" style="margin-top:6px;background:#FB8C00;color:white;" onclick="accionPlanes(\'corregirPlanesFijos\', this)">Corregir reglas fijas en PLANES_VAO' +
             (pl.corregiblePrueba ? ' · PRUEBA 7 + 3' : '') + (pl.fiadosFaltan && pl.fiadosFaltan.length ? ' · Fiados en ' + pl.fiadosFaltan.map(_esc).join(', ') : '') + '</button>' +
             '<div class="ayuda">Solo cambia la planilla de planes. Ningún negocio cambia: cada uno se revisa en su checkpoint.</div>';
-        if (pl.existe && !pl.tienePersonalizado) h += '<br><button class="btn-accion" style="margin-top:6px;background:#5E35B1;color:white;" onclick="accionPlanes(\'agregarPlanPersonalizado\', this)">Agregar plan PERSONALIZADO</button>';
+        if (pl.existe && !pl.tienePersonalizado) h += '<br><button class="btn-accion" style="margin-top:6px;background:#5E35B1;color:white;" onclick="accionPlanes(\'agregarPlanPersonalizado\', this)">Agregar plan a medida («Armá tu plan»)</button>';
         const rs = cm.resumen || {};
         if ((rs.cambiosIncompletos || []).length) h += '<div style="margin-top:8px;color:#C62828;font-weight:800;">⛔ Cambio de plan sin terminar: ' + rs.cambiosIncompletos.map(_esc).join(', ') + '</div>';
         if ((rs.pruebasSinRegularizar || []).length) h += '<div style="margin-top:4px;color:#C62828;font-weight:800;">🧪 PRUEBA sin regularizar (no vencen solas): ' + rs.pruebasSinRegularizar.map(_esc).join(', ') + '</div>';
