@@ -19,7 +19,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-/* planes.html v3 (STAGING · v043) — página pública. Planes P1/P2, complementos P3 «Armá tu plan». Nombres, prestaciones y precios vienen del servidor (PLANES_VAO y COMPLEMENTOS_VAO). */
+/* planes.html v4 (STAGING · v044) — «Armá tu plan» como rompecabezas: arrastrar y encajar, o tocar las piezas.
+   planes.html v3 (STAGING · v043) — página pública. Planes P1/P2, complementos P3 «Armá tu plan». Nombres, prestaciones y precios vienen del servidor (PLANES_VAO y COMPLEMENTOS_VAO). */
 :root {
   --tinta:   #0D47A1;   /* azul VAO oscuro: títulos y texto fuerte */
   --azul:    #1E88E5;   /* azul VAO: acciones */
@@ -108,6 +109,28 @@ ul.hace b { color: var(--tinta); }
 .comp input { width: 24px; height: 24px; margin: 3px 0 0; }
 .comp.no { opacity: .55; }
 .comp b { color: var(--tinta); }
+/* v4: rompecabezas. P1 y P2 = misma familia (azul / violeta); P3 = complementos verdes */
+.rompe { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 760px) { .rompe { grid-template-columns: 1fr 1.15fr; } }
+.bandeja, .tablero { background: #fff; border: 2px solid var(--borde); border-radius: var(--radio); padding: 12px; }
+.tablero { border-style: dashed; background: #F7FAFE; }
+.bandeja h4, .tablero h4 { margin: 4px 0 8px; color: var(--tinta); font-size: .95rem; }
+.piezas { display: flex; flex-wrap: wrap; gap: 10px 18px; min-height: 52px; }
+.pieza { position: relative; border: 0; border-radius: 10px; padding: 10px 14px; min-height: 48px; font: 700 .95rem 'Atkinson Hyperlegible', sans-serif; color: #fff; cursor: grab; text-align: left; touch-action: manipulation; box-shadow: 0 2px 0 rgba(0,0,0,.18); }
+.pieza::after { content: ''; position: absolute; right: -9px; top: 50%; width: 18px; height: 18px; margin-top: -9px; border-radius: 50%; background: inherit; }   /* la «pestaña» que encaja */
+.pieza small { display: block; font-weight: 400; font-size: .78rem; opacity: .95; }
+.pieza.p1 { background: #1E88E5; } .pieza.p2 { background: #7E57C2; } .pieza.p3 { background: #2E8B57; }
+.pieza:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
+.pieza.arrastrando { opacity: .5; }
+.pieza.no { background: #9E9E9E; cursor: not-allowed; }
+.encaje { border: 2px dashed #9DB6D3; border-radius: 12px; padding: 12px; min-height: 64px; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; color: var(--suave); font-size: .9rem; transition: background .15s; }
+.encaje.sobre { background: #E3F2FD; border-color: var(--azul); }
+.encaje.base { border-color: #1E88E5; }
+.encaje.p3 { border-color: #2E8B57; margin-top: 10px; }
+.encaje.p3.sobre { background: #E8F5E9; }
+.encastre { display: flex; align-items: stretch; }
+.encastre .pieza:first-child { border-radius: 10px 0 0 10px; } .encastre .pieza + .pieza { border-radius: 0 10px 10px 0; padding-left: 20px; }
+.encastre .pieza:first-child::after { z-index: 1; }
 .resumen { background: #fff; border: 2px solid var(--tinta); border-radius: var(--radio); padding: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .95rem; }
 .resumen .linea { display: flex; justify-content: space-between; gap: 10px; }
 .resumen .total { border-top: 2px dashed #888; margin-top: 8px; padding-top: 8px; font-weight: 600; font-size: 1.05rem; }
@@ -204,8 +227,15 @@ footer { padding: 26px 0 40px; font-size: .88rem; color: var(--suave); }
 <section id="armaTuPlan" class="oculto" style="padding-top:8px;">
   <div class="col">
     <h2>Armá tu plan</h2>
-    <p>Elegí tu plan base (arriba) y sumale los complementos que necesites. Los complementos no son un plan aparte: se agregan a P1 Esencial o a P2 Gestión.</p>
-    <div id="complementos"></div>
+    <p>Arrastrá las piezas al tablero (o tocalas). Primero el plan base, <b>P1 Esencial</b> o <b>P2 Gestión</b> (P2 ya trae todo P1). Después sumale los complementos <b style="color:#2E8B57">P3</b> que quieras: no son un plan aparte, se encastran en tu plan.</p>
+    <div class="rompe">
+      <div class="bandeja" id="bandeja" aria-label="Piezas disponibles"><h4>Piezas</h4><div class="piezas" id="piezasBase"></div><h4 style="margin-top:12px;">Complementos P3</h4><div class="piezas" id="piezasP3"></div></div>
+      <div class="tablero" aria-label="Tu plan"><h4>Tu plan</h4>
+        <div class="encaje base" id="ranuraBase" data-zona="base" aria-label="Lugar del plan base"></div>
+        <div class="encaje p3" id="ranuraP3" data-zona="p3" aria-label="Lugar de los complementos"></div>
+      </div>
+    </div>
+    <div id="complementos" class="oculto"></div>
     <h3 style="margin:18px 0 8px;">Tu elección</h3>
     <div class="resumen" id="resumen" aria-live="polite"></div>
     <div id="msgEleccion" class="msg oculto" role="status" aria-live="polite" style="margin-top:12px;"></div>
@@ -302,7 +332,7 @@ footer { padding: 26px 0 40px; font-size: .88rem; color: var(--suave); }
 <footer><div class="col">VAO POS es un servicio de VAO Sistemas. Página de pruebas (STAGING).</div></footer>
 
 <script>
-// planes.html v3 (v043) — STAGING. Todo lo comercial (precios, oferta, condiciones, cupos) lo decide el servidor.
+// planes.html v4 (v044) — STAGING. v3 (v043): Todo lo comercial (precios, oferta, condiciones, cupos) lo decide el servidor.
 const API_URL = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
 const URL_PUBLICA = location.origin + location.pathname;
 const LS_SOL = 'vao_registro_solicitud';
@@ -401,25 +431,55 @@ function pintarPlanesV3() {
     ELECCION.plan = cod; guardarEleccion(); pintarPlanesV3(); pintarComplementos(); if (solicitudId) anotarEleccion(false);
   }));
 }
+// v4: rompecabezas — arrastrar y encajar (computadora) o tocar (celular, teclado). Misma elección que las tarjetas de arriba.
+function piezaHTML(cls, clave, titulo, sub, extra) { return '<button type="button" class="pieza ' + cls + '" draggable="true" data-pieza="' + esc(clave) + '"' + (extra || '') + '>' + esc(titulo) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</button>'; }
+function aplicarPieza(clave, accion) {
+  const lista = (CATALOGO && CATALOGO.complementos) || [];
+  if (clave === 'BASICO' || clave === 'PRO') { ELECCION.plan = accion === 'quitar' ? '' : clave; }
+  else {
+    const c = lista.find(x => x.clave === clave); if (!c) return;
+    ELECCION.complementos = ELECCION.complementos.filter(k => k !== clave);
+    if (accion !== 'quitar') { if (ELECCION.plan && c.planesBase.indexOf(ELECCION.plan) === -1) { const m = $('msgEleccion'); m.className = 'msg info'; m.textContent = c.nombre + ' no se puede sumar al plan elegido.'; return; } ELECCION.complementos.push(clave); }
+  }
+  guardarEleccion(); pintarPlanesV3(); pintarComplementos(); if (solicitudId) anotarEleccion(false);
+}
 function pintarComplementos() {
   const lista = (CATALOGO && CATALOGO.complementos) || [];
-  const box = $('complementos');
-  if (!lista.length) { box.innerHTML = '<p class="chico">Por ahora no hay complementos para sumar.</p>'; }
-  else box.innerHTML = lista.map(c => {
-    const ok = !ELECCION.plan || c.planesBase.indexOf(ELECCION.plan) !== -1;
-    const mar = ok && ELECCION.complementos.indexOf(c.clave) !== -1;
-    return '<label class="comp' + (ok ? '' : ' no') + '"><input type="checkbox" data-comp="' + esc(c.clave) + '"' + (mar ? ' checked' : '') + (ok ? '' : ' disabled') + '>' +
-      '<span><span class="grupo" style="background:#2E8B1E;color:#fff;border-radius:6px;padding:1px 7px;font-size:.78rem;font-weight:700;margin-right:6px;">P3</span><b>' + esc(c.nombre) + '</b> · ' + esc(precioTxt(c.precioRegular, c.precioLanzamiento, !!PROMO)) +
-      '<br><span class="chico">' + esc(c.descripcion) + '</span>' + (ok ? '' : '<br><span class="chico">No disponible para el plan elegido.</span>') + '</span></label>';
-  }).join('');
-  // un complemento que no corresponde al plan elegido se quita de la elección
   ELECCION.complementos = ELECCION.complementos.filter(k => lista.some(c => c.clave === k && (!ELECCION.plan || c.planesBase.indexOf(ELECCION.plan) !== -1)));
   guardarEleccion();
-  box.querySelectorAll('input[data-comp]').forEach(i => i.addEventListener('change', () => {
-    const k = i.dataset.comp; ELECCION.complementos = ELECCION.complementos.filter(x => x !== k); if (i.checked) ELECCION.complementos.push(k);
-    guardarEleccion(); pintarResumen(); if (solicitudId) anotarEleccion(false);
-  }));
+  const p1 = PLANES.find(p => p.codigo === 'BASICO'), p2 = PLANES.find(p => p.codigo === 'PRO');
+  const nom = (p, d) => p ? p.nombre : d, pre = p => p ? precioTxt(p.precioRegular, p.precioLanzamiento, p.conPromo) : '';
+  // bandeja: lo que no está en el tablero
+  $('piezasBase').innerHTML = (ELECCION.plan !== 'BASICO' && p1 ? piezaHTML('p1', 'BASICO', nom(p1, 'P1 Esencial'), 'Lo de todos los días · ' + pre(p1), ' aria-label="Agregar ' + esc(nom(p1, 'P1')) + ' a tu plan"') : '') +
+    (ELECCION.plan !== 'PRO' && p2 ? piezaHTML('p2', 'PRO', nom(p2, 'P2 Gestión'), 'Incluye P1 + gestión · ' + pre(p2), ' aria-label="Agregar ' + esc(nom(p2, 'P2')) + ' a tu plan"') : '') || '<span class="chico">El plan base ya está en el tablero.</span>';
+  $('piezasP3').innerHTML = lista.filter(c => ELECCION.complementos.indexOf(c.clave) === -1).map(c => {
+    const ok = !ELECCION.plan || c.planesBase.indexOf(ELECCION.plan) !== -1;
+    return piezaHTML('p3' + (ok ? '' : ' no'), c.clave, c.nombre, precioTxt(c.precioRegular, c.precioLanzamiento, !!PROMO), ' title="' + esc(c.descripcion) + '" aria-label="Sumar ' + esc(c.nombre) + '"' + (ok ? '' : ' disabled'));
+  }).join('') || (lista.length ? '<span class="chico">Sumaste todos los complementos.</span>' : '<span class="chico">Por ahora no hay complementos para sumar.</span>');
+  // tablero
+  $('ranuraBase').innerHTML = !ELECCION.plan ? 'Arrastrá acá P1 Esencial o P2 Gestión (o tocá la pieza)'
+    : ELECCION.plan === 'BASICO' ? piezaHTML('p1', 'BASICO', nom(p1, 'P1 Esencial'), 'tocá para quitar', ' aria-label="Quitar ' + esc(nom(p1, 'P1')) + '"')
+    : '<span class="encastre">' + piezaHTML('p1', 'PRO', 'P1 Esencial', 'incluido en P2', ' aria-label="Quitar ' + esc(nom(p2, 'P2')) + '" tabindex="-1"') + piezaHTML('p2', 'PRO', '+ Gestión', nom(p2, 'P2 Gestión') + ' · tocá para quitar', ' aria-label="Quitar ' + esc(nom(p2, 'P2')) + '"') + '</span>';
+  $('ranuraP3').innerHTML = ELECCION.complementos.length ? lista.filter(c => ELECCION.complementos.indexOf(c.clave) !== -1).map(c => piezaHTML('p3', c.clave, c.nombre, 'tocá para quitar', ' aria-label="Quitar ' + esc(c.nombre) + '"')).join('') : 'Sumá acá los complementos P3 que quieras (opcional)';
+  // tocar = poner / sacar
+  $('bandeja').querySelectorAll('.pieza:not([disabled])').forEach(b => b.onclick = () => aplicarPieza(b.dataset.pieza, 'poner'));
+  document.querySelectorAll('#ranuraBase .pieza, #ranuraP3 .pieza').forEach(b => b.onclick = () => aplicarPieza(b.dataset.pieza, 'quitar'));
+  // arrastrar y encajar
+  document.querySelectorAll('.rompe .pieza').forEach(b => {
+    b.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', b.dataset.pieza + '|' + (b.closest('.encaje') ? 'tablero' : 'bandeja')); e.dataTransfer.effectAllowed = 'move'; b.classList.add('arrastrando'); });
+    b.addEventListener('dragend', () => b.classList.remove('arrastrando'));
+  });
   pintarResumen();
+}
+function prepararZonas() {
+  const zona = (el, alSoltar) => {
+    el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('sobre'); });
+    el.addEventListener('dragleave', () => el.classList.remove('sobre'));
+    el.addEventListener('drop', e => { e.preventDefault(); el.classList.remove('sobre'); const [clave, desde] = String(e.dataTransfer.getData('text/plain')).split('|'); if (clave) alSoltar(clave, desde); });
+  };
+  zona($('ranuraBase'), (k, desde) => { if (k === 'BASICO' || k === 'PRO') aplicarPieza(k, 'poner'); });
+  zona($('ranuraP3'), (k, desde) => { if (k !== 'BASICO' && k !== 'PRO') aplicarPieza(k, 'poner'); });
+  zona($('bandeja'), (k, desde) => { if (desde === 'tablero') aplicarPieza(k, 'quitar'); });
 }
 function pintarResumen() {
   const r = $('resumen');
@@ -452,7 +512,7 @@ async function cargarPlanes() {
     if (CATALOGO) {
       if (ELECCION.plan && !PLANES.some(p => p.codigo === ELECCION.plan)) ELECCION.plan = '';
       const pr = PLANES.find(p => p.codigo === 'PRUEBA'); if (pr && pr.prestaciones) $('tSub').textContent = 'Incluye ' + [...new Set(pr.prestaciones.map(x => CATALOGO.grupos[x.grupo] || x.grupo))].join(' + ');
-      pintarPlanesV3(); $('armaTuPlan').classList.remove('oculto'); pintarComplementos();
+      pintarPlanesV3(); $('armaTuPlan').classList.remove('oculto'); if (!window._zonasListas) { prepararZonas(); window._zonasListas = true; } pintarComplementos();
     } else {
       $('planes').innerHTML = r.planes.map(p => htmlPlan(p, r.promo)).join('') +
         (r.promo ? '<p class="chico">' + esc(r.promo.condiciones) + '</p>' : '');

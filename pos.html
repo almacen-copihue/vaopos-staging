@@ -185,6 +185,8 @@ body {
 .tarjeta-plan .btn-tool:active { filter: brightness(.94); }
 .tarjeta-plan .btn-tool:focus-visible, .btn-cuenta:focus-visible { outline: 2px solid var(--tp-color, #fff); outline-offset: 2px; }
 .planes-cuenta { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.tarjeta-plan.muchos .tp-botones { flex-wrap: wrap; }   /* V42: con varios complementos, la tarjeta P3 usa dos filas */
+.tarjeta-plan.muchos .btn-tool { flex: 1 1 22%; }
 .btn-cuenta { border: none; border-radius: 12px; background: rgba(255,255,255,.16); color: #fff; font-weight: 800; font-family: inherit; font-size: .74rem;
               padding: 8px 10px; min-height: 40px; cursor: pointer; white-space: nowrap; }
 .btn-cuenta.salir { background: rgba(214,66,66,.55); }
@@ -821,13 +823,15 @@ body {
             <button class="btn-tool inventario" id="btnInventarioP2" onclick="abrirRevisionInventarioV41()"><span class="ico">✔️</span><span class="txt">Inventario</span></button>
             <button class="btn-tool stats" id="btnReportes" onclick="window.location.href='reportes.html?p='+PREFIJO"><span class="ico">📊</span><span class="txt">Reportes</span></button>
             <button class="btn-tool clientes" id="btnClientesP2" onclick="window.location.href='fiados.html?p='+PREFIJO"><span class="ico">👥</span><span class="txt">Clientes</span></button>
+            <button class="btn-tool anular" id="btnAnularP2" onclick="window.location.href='anular.html?p='+PREFIJO"><span class="ico">↩️</span><span class="txt">Anular</span></button>
         </div>
     </section>
     <section class="tarjeta-plan" id="tarjetaP3" data-plan="P3" aria-labelledby="tituloP3">
-        <div class="tp-cab"><span class="tp-sello">P3</span><div><h2 class="tp-titulo" id="tituloP3">Complementos</h2><p class="tp-desc">Cobro avanzado: varios medios y monedas</p></div></div>
+        <div class="tp-cab"><span class="tp-sello">P3</span><div><h2 class="tp-titulo" id="tituloP3">Complementos</h2><p class="tp-desc" id="descP3">Herramientas que sumaste a tu plan</p></div></div>
         <div class="tp-botones">
             <button class="btn-tool mixto" id="btnCobroAvanzado" onclick="abrirCobroAvanzadoV41()"><span class="ico">🔀</span><span class="txt">Cobro mixto</span></button>
             <button class="btn-tool monedas" id="btnCotizaciones" onclick="verCotizacionesV41()"><span class="ico">💱</span><span class="txt">Cotizaciones</span></button>
+            <span id="p3Complementos" style="display:contents"></span>
         </div>
     </section>
     <div class="planes-cuenta">
@@ -1127,7 +1131,7 @@ if (!/^[A-Z0-9]{2,10}$/.test(PREFIJO)) {
 
 // ========== CONFIG ==========
 const API_URL  = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
-const APP_VERSION = 41; // V41 (v043): las funciones se muestran en TARJETAS por plan — P1 · Esencial, P2 · Gestión y P3 · Complementos — cada una con título, descripción y sus botones; solo las contratadas (sin tarjetas vacías ni botones bloqueados); en celular se apilan · V40 (v043): la barra se arma por plan — P1 Esencial (Ingresar, Hoy, Fiados) y P2 Gestión (Ajustar, Reportes) en grupos; se ve solo lo contratado y habilitado; 🔀 Mixto solo con el complemento Cobro avanzado; ✔️ Revisar inventario solo con P2; 💳 Mi plan muestra tu plan, complementos y vencimiento y permite pedir cambios por WhatsApp · V39: 🔀 Mixto (solo si VAO prende el cobro avanzado): varios medios, monedas, vuelto, fiar lo que falta o cobrar deuda, con Revisar antes de cobrar y reintento sin duplicar; Hoy muestra la caja del servidor (todos los equipos); Mis datos → ✔️ Revisar inventario (solo lectura) · V38: al fiar avisa si el cliente ya debe (solo lectura, no bloquea) · V37: sin 🏠 en el encabezado (cerraba la sesión); Salir pide confirmación; '¿Perdiste o te robaron el celular?' en la pantalla del PIN · V36: PIN oculto ●●●●●● con 👁️; 📣 Compartir con el afiche (menú del celular: elegís WhatsApp Business); PIN: cierra el teclado y muestra ⏳ Verificando visible arriba; aviso único de versión nueva · V35: 📣 comparte planes.html?v=N (WhatsApp guarda la vista previa vieja de un link ya enviado) · V34: botón 💬 Soporte por WhatsApp a VAO Sistemas (encabezado y pantalla del PIN) · V33: app instalable (manifest + service worker sin copias) y recuerda el último comercio · V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
+const APP_VERSION = 42; // V42 (v044): la tarjeta P3 muestra cada complemento contratado (cotización, compras, salidas, finanzas, mis deudas, egresos, juego, voz) y abre su pantalla; P2 suma ↩️ Anular venta; 💳 Mi plan coherente (nombres del servidor, sin «Pagar» si el pago en línea está apagado: se pide a VAO) · V41 (v043): las funciones se muestran en TARJETAS por plan — P1 · Esencial, P2 · Gestión y P3 · Complementos — cada una con título, descripción y sus botones; solo las contratadas (sin tarjetas vacías ni botones bloqueados); en celular se apilan · V40 (v043): la barra se arma por plan — P1 Esencial (Ingresar, Hoy, Fiados) y P2 Gestión (Ajustar, Reportes) en grupos; se ve solo lo contratado y habilitado; 🔀 Mixto solo con el complemento Cobro avanzado; ✔️ Revisar inventario solo con P2; 💳 Mi plan muestra tu plan, complementos y vencimiento y permite pedir cambios por WhatsApp · V39: 🔀 Mixto (solo si VAO prende el cobro avanzado): varios medios, monedas, vuelto, fiar lo que falta o cobrar deuda, con Revisar antes de cobrar y reintento sin duplicar; Hoy muestra la caja del servidor (todos los equipos); Mis datos → ✔️ Revisar inventario (solo lectura) · V38: al fiar avisa si el cliente ya debe (solo lectura, no bloquea) · V37: sin 🏠 en el encabezado (cerraba la sesión); Salir pide confirmación; '¿Perdiste o te robaron el celular?' en la pantalla del PIN · V36: PIN oculto ●●●●●● con 👁️; 📣 Compartir con el afiche (menú del celular: elegís WhatsApp Business); PIN: cierra el teclado y muestra ⏳ Verificando visible arriba; aviso único de versión nueva · V35: 📣 comparte planes.html?v=N (WhatsApp guarda la vista previa vieja de un link ya enviado) · V34: botón 💬 Soporte por WhatsApp a VAO Sistemas (encabezado y pantalla del PIN) · V33: app instalable (manifest + service worker sin copias) y recuerda el último comercio · V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
 const HOY_KEY    = 'vao_ventas_' + PREFIJO + '_' + new Date().toISOString().slice(0, 10);
 const CARRITO_KEY= 'vao_carrito_' + PREFIJO;
 
@@ -1177,6 +1181,7 @@ function generarToolbarSegunPacks(config) {
         btnFiados:   config.extra_fiados,                     // P1: fiado sencillo (fiar y cobrar completo)
         btnClientesP2: config.extra_fiados && conGestion,     // P2: gestión completa de fiados y clientes
         btnMisDatos: true,
+        btnAnularP2: config.pack2_editor_stock === true && !(CONFIG_ACTUAL && CONFIG_ACTUAL.modoConsulta),
         btnCobroAvanzado: _cobroAvanzadoV41_(config),
         btnCotizaciones: _cobroAvanzadoV41_(config) && _hayCotizacionV41_()
     };
@@ -1184,6 +1189,7 @@ function generarToolbarSegunPacks(config) {
         const btn = document.getElementById(id);
         if (btn) btn.style.display = (botonesPorPack[id] === true) ? '' : 'none';
     });
+    _pintarComplementosP3V42_(config);   // V42: un botón por complemento contratado
     ['tarjetaP1', 'tarjetaP2', 'tarjetaP3'].forEach(function (g) { // V41: una tarjeta sin botones no se muestra
         const el = document.getElementById(g); if (!el) return;
         el.style.display = [...el.querySelectorAll('.btn-tool')].some(b => b.style.display !== 'none') ? '' : 'none';
@@ -1191,6 +1197,16 @@ function generarToolbarSegunPacks(config) {
     const inv = document.getElementById('btnRevisarInv'); if (inv) inv.style.display = config.pack2_editor_stock === true ? '' : 'none'; // V40: revisión de inventario = P2
 }
 
+// V42: tarjeta P3 — un botón por cada complemento contratado y habilitado (el catálogo y los nombres vienen del servidor).
+// El servidor vuelve a validar cada acción: ocultar un botón no reemplaza el permiso.
+function _pintarComplementosP3V42_(config) {
+    const box = document.getElementById('p3Complementos'); if (!box) return;
+    const cat = (PRESTACIONES_ACTUAL && PRESTACIONES_ACTUAL.complementos) || [];
+    const cortos = { extra_cotizador: 'Cotizar', extra_lista_compras: 'Compras', extra_retiro_local: 'Salidas', pack3_finanzas: 'Finanzas', extra_prestamos: 'Mis deudas', extra_retiro_caja: 'Egresos', extra_raspadita: 'Juego', extra_voz: 'Voz' };
+    const vis = cat.filter(c => c.pagina && config[c.clave] === true && (c.clave !== 'extra_voz' || /Android/i.test(navigator.userAgent || '')));
+    box.innerHTML = vis.map(c => '<button class="btn-tool p3mod" id="btnP3_' + c.clave + '" title="' + _escHTML(c.nombre) + '" onclick="window.location.href=\'' + _escHTML(c.pagina) + '?p=\'+PREFIJO"><span class="ico">' + _escHTML(c.icono) + '</span><span class="txt">' + _escHTML(cortos[c.clave] || c.nombre) + '</span></button>').join('');
+    const t = document.getElementById('tarjetaP3'); if (t) t.classList.toggle('muchos', vis.length + 2 > 4);
+}
 // V41: tarjeta P3 — el complemento Cobro avanzado (lo confirma el servidor: getConfig.cobro y getConfig.prestaciones)
 function _cobroAvanzadoV41_(config) {
     if (CONFIG_ACTUAL && CONFIG_ACTUAL.modoConsulta) return false;
@@ -3427,11 +3443,12 @@ async function cargarMiPlanV40() {
     let r = null; try { r = await _llamarAPI('getMiPlan', { token: _tokenActual() }); } catch (e) { r = null; }
     if (!r || !r.success) { box.innerHTML = ''; return; } // servidor anterior: solo se muestra el pago, como antes
     const grupos = { P1: 'P1 Esencial', P2: 'P2 Gestión', P3: 'P3 Complementos' };
-    const porG = g => (r.prestaciones || []).filter(x => x.grupo === g);
+    const conGrupos = r.planesP1P2P3 !== false;   // V42: si los planes todavía no se pasaron a P1/P2/P3, no se mezclan nombres viejos y nuevos
+    const porG = g => (r.prestaciones || []).filter(x => conGrupos ? x.grupo === g : g === 'P1');
     const est = { ACTIVO: '🟢 Activo', VENCIDO: '🔴 Vencido', SUSPENDIDO: '🔴 Suspendido' }[r.estado] || _escHTML(String(r.estado || '').replace('_', ' '));
     let h = '<div class="md-fila" style="border:none;"><div><b>' + _escHTML(r.planNombre || r.plan || 'Sin plan') + '</b><small>' + est + (r.vence ? ' · vence ' + _escHTML(r.vence) : '') + '</small></div></div>' +
         '<div class="mp-chip">Ventas con medios simples</div><div class="mp-chip">📥 Mis datos e historial</div>';
-    ['P1', 'P2', 'P3'].forEach(g => { const ps = porG(g); if (ps.length) h += '<div class="mp-grupo">' + grupos[g] + '</div>' + ps.map(x => '<span class="mp-chip">' + _escHTML(x.nombre) + '</span>').join(''); });
+    ['P1', 'P2', 'P3'].forEach(g => { const ps = porG(g); if (ps.length) h += '<div class="mp-grupo">' + (conGrupos ? grupos[g] : 'Lo que incluye') + '</div>' + ps.map(x => '<span class="mp-chip">' + _escHTML(x.nombre) + '</span>').join(''); });
     (r.complementos || []).forEach(c => { h += '<div style="font-size:0.78rem;color:#555;">➕ ' + _escHTML(c.nombre) + (c.vence ? ' · hasta ' + _escHTML(c.vence) : '') + '</div>'; });
     if ((r.suspendidas || []).length) h += '<div class="mp-grupo" style="color:#B71C1C;">Suspendido por VAO Sistemas</div>' + r.suspendidas.map(x => '<span class="mp-chip off">' + _escHTML(x.nombre || x) + '</span>').join('');
     if (r.totalMensual !== null && r.totalMensual !== undefined) h += '<div style="font-size:0.85rem;margin-top:6px;"><b>Total mensual:</b> $' + Number(r.totalMensual).toLocaleString('es-AR') + '</div>';
@@ -3449,11 +3466,12 @@ function pedirCambioPlanV40() {
 }
 async function abrirPagoPlan() {
     document.getElementById('modalPagoPlan').classList.add('open');
-    cargarMiPlanV40();
     const lista = document.getElementById('pagoPlanLista'), est = document.getElementById('pagoPlanEstado');
     est.textContent = ''; lista.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;">Cargando planes…</div>';
+    await cargarMiPlanV40();
     try {
         const r = await _llamarAPI('getPlanesPublicos', {});
+        if (_MIPLAN_V40 && _MIPLAN_V40.pagoEnLinea === false) { lista.innerHTML = _planesSinPagoV42_(r); return; }   // V42: sin pago en línea no hay botón «Pagar»
         const planes = ((r && r.planes) || []).filter(p => p.codigo !== 'PRUEBA' && p.contratable && !p.proximamente && !p.cotizacion && p.precioRegular > 0);
         if (!planes.length) { lista.innerHTML = '<div style="color:#C62828;padding:14px 0;">No hay planes disponibles para pagar en línea.</div>'; return; }
         const promo = r.promo && r.promoActiva !== false ? r.promo : null;
@@ -3465,6 +3483,24 @@ async function abrirPagoPlan() {
     } catch (e) { lista.innerHTML = '<div style="color:#C62828;padding:14px 0;">📡 Sin conexión. Probá de nuevo.</div>'; }
 }
 function cerrarPagoPlan() { document.getElementById('modalPagoPlan').classList.remove('open'); }
+// V42: planes y complementos para cambiar o sumar. El pago lo confirma VAO Sistemas (manual): el botón pide el cambio por WhatsApp.
+function _planesSinPagoV42_(r) {
+    const planes = ((r && r.planes) || []).filter(p => p.codigo !== 'PRUEBA' && p.contratable && !p.proximamente && !p.cotizacion);
+    const cat = r && r.catalogoV043 && r.catalogoV043.migrado ? r.catalogoV043.complementos || [] : [];
+    const precio = (reg, lan) => reg === null || reg === undefined ? 'precio a confirmar' : '$' + Number(reg).toLocaleString('es-AR') + ' por mes' + (lan ? ' (lanzamiento $' + Number(lan).toLocaleString('es-AR') + ')' : '');
+    const color = c => c === 'PRO' ? '#4527A0' : '#0D47A1';
+    let h = '<div class="mp-grupo" style="margin-top:4px;">Planes</div>' + planes.map(p => '<div class="md-fila" style="border-left:4px solid ' + color(p.codigo) + ';padding-left:8px;"><div><b style="color:' + color(p.codigo) + '">' + _escHTML(p.nombre) + '</b><small>' + precio(p.precioRegular, r.promo && p.conPromo ? p.precioLanzamiento : null) + '</small></div><button data-pedir="' + _escHTML(p.nombre) + '">Pedir</button></div>').join('');
+    if (cat.length) h += '<div class="mp-grupo" style="color:#1B5E20;">P3 Complementos (se suman a tu plan)</div>' + cat.map(c => '<div class="md-fila" style="border-left:4px solid #2E8B57;padding-left:8px;"><div><b style="color:#1B5E20">' + _escHTML(c.nombre) + '</b><small>' + precio(c.precioRegular) + '</small></div><button style="background:#2E8B57" data-pedir="' + _escHTML(c.nombre) + '">Pedir</button></div>').join('');
+    h += '<div style="font-size:0.75rem;color:#777;margin-top:8px;">«Pedir» le avisa a VAO Sistemas por WhatsApp. El cambio se activa cuando VAO confirma tu pago (transferencia).</div>';
+    setTimeout(() => document.querySelectorAll('#pagoPlanLista [data-pedir]').forEach(b => b.onclick = () => _pedirV42_(b.getAttribute('data-pedir'))), 0);
+    return h;
+}
+function _pedirV42_(que) {
+    let nombre = ''; try { nombre = (document.getElementById('headerTitulo').textContent || '').trim(); } catch (e) {}
+    const r = _MIPLAN_V40 || {};
+    const t = 'Hola VAO Sistemas, quiero contratar: ' + que + '.\nComercio: ' + (nombre ? nombre + ' ' : '') + '(' + PREFIJO + ')\nPlan actual: ' + (r.planNombre || '-');
+    window.open('https://wa.me/' + SOPORTE_WHATSAPP + '?text=' + encodeURIComponent(t), '_blank', 'noopener');
+}
 async function pagarPlanMP(btn) {
     const plan = btn.getAttribute('data-plan'), est = document.getElementById('pagoPlanEstado');
     document.querySelectorAll('#pagoPlanLista button').forEach(b => b.disabled = true);
