@@ -270,13 +270,13 @@ footer { text-align: center; color: var(--suave); font-size: .82rem; padding: 0 
     <div class="msg" id="msgOlvidar"></div>
   </div>
 </main>
-<footer>VAO Sistemas · VAO POS · contrato.html V3</footer>
+<footer>VAO Sistemas · VAO POS · contrato.html V3.1</footer>
 
 <script>
 'use strict';
 // ── Configuración ─────────────────────────────────────────────────────────────
 const API_URL = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec'; // STAGING
-const VERSION_PAGINA = 'contrato.html V3';
+const VERSION_PAGINA = 'contrato.html V3.1';
 // V3: Volver → al POS del mismo comercio (si vino con ?p=XX); si no, atrás o a la portada.
 function volverAlPOS() {
   const p = String(new URLSearchParams(location.search).get('p') || '').trim().toUpperCase();
@@ -386,6 +386,7 @@ async function cargarContrato() {
   mostrar('pCargando');
   const r = await api('getContrato', {}, true);
   if (r._incierto) return error('Sin conexión', 'No pudimos cargar el contrato (' + r._motivo + '). Revisá tu conexión y tocá Reintentar.');
+  if (r.sinContrato) { location.replace('terminos.html?p=' + encodeURIComponent(E.prefijo)); return; }   // V3.1 (v044.3): sin contrato publicado se muestran los Términos de uso (no un error)
   if (r.error) return error(r.alterado ? 'Contrato en revisión' : 'Contrato no disponible', r.error);
   if (!ambitoAdmitido(r.ambito, r.sinValorLegal)) return error('Contrato no admitido', 'El contrato publicado tiene un tipo que esta página no reconoce. Avisá a VAO Sistemas.');
   ajustarFranja(r.ambito);

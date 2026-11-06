@@ -180,6 +180,8 @@ body {
 .mp5.PRO { border-color: #7E57C2; box-shadow: 0 8px 22px rgba(126,87,194,.22); }
 .mp5.PLUS { border-color: transparent; background: linear-gradient(#fff,#fff) padding-box, linear-gradient(135deg,#8A5A00,#D4A017 45%,#F3D27A 70%,#8A5A00) border-box; }
 .mp5.actual { outline: 3px solid #2CCB6F; outline-offset: 2px; }
+.mp5.foco { animation: mp5foco 1.6s ease-out 2; }   /* V43.2: al llegar desde «✨ P3 PRO» */
+@keyframes mp5foco { 0% { box-shadow: 0 0 0 0 rgba(212,160,23,.75); } 70% { box-shadow: 0 0 0 14px rgba(212,160,23,0); } 100% { box-shadow: 0 0 0 0 rgba(212,160,23,0); } }
 .mp5-cab { display: flex; align-items: center; gap: 8px; }
 .mp5-sello { color: #fff; font-weight: 900; border-radius: 9px; padding: 4px 8px; font-size: .85rem; background: #1E88E5; }
 .mp5.PRO .mp5-sello { background: #7E57C2; } .mp5.PLUS .mp5-sello { background: linear-gradient(135deg,#8A5A00,#D4A017); color: #241800; }
@@ -874,7 +876,7 @@ body {
         </div>
     </section>
     <div class="planes-cuenta">
-        <button class="btn-cuenta p3pro" id="btnVerP3" onclick="abrirPagoPlan()" style="display:none" title="Conocé P3 PRO: el plan completo" aria-label="Conocé P3 PRO">✨ <span>P3 PRO</span></button>
+        <button class="btn-cuenta p3pro" id="btnVerP3" onclick="verP3V432()" style="display:none" title="Conocé P3 PRO: el plan completo" aria-label="Conocé P3 PRO">✨ <span>P3 PRO</span></button>
         <button class="btn-cuenta" id="btnMiPlan" onclick="abrirPagoPlan()" title="Mi plan" aria-label="Mi plan">💳 <span>Mi plan</span></button>
         <button class="btn-cuenta salir" onclick="confirmarSalir()" aria-label="Salir">🚪 <span>Salir</span></button>
     </div>
@@ -1263,6 +1265,13 @@ function _plegablesV432_() {
     _abrirTarjetaV432_(abierta, false);
     const apps = _appsV43_(), p3 = document.getElementById('btnVerP3');
     if (p3) p3.style.display = (PRESTACIONES_ACTUAL && PRESTACIONES_ACTUAL.planesP1P2P3 && apps && !apps.some(a => a.grupo === 'P3' && a.habilitada)) ? '' : 'none';
+}
+// V43.2: «✨ P3 PRO» abre Mi plan directo en la tarjeta P3 PRO (centrada y resaltada), no arriba de todo.
+async function verP3V432() {
+    await abrirPagoPlan();
+    const c = document.querySelector('#pagoPlanLista .mp5.PLUS'); if (!c) return;
+    c.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    c.classList.remove('foco'); void c.offsetWidth; c.classList.add('foco');
 }
 function _abrirTarjetaV432_(id, guardar) {
     ['tarjetaP1', 'tarjetaP2', 'tarjetaP3', 'tarjetaC'].forEach(function (g) {
