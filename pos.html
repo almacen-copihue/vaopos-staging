@@ -180,6 +180,17 @@ body {
 .mp5.PRO { border-color: #7E57C2; box-shadow: 0 8px 22px rgba(126,87,194,.22); }
 .mp5.PLUS { border-color: transparent; background: linear-gradient(#fff,#fff) padding-box, linear-gradient(135deg,#8A5A00,#D4A017 45%,#F3D27A 70%,#8A5A00) border-box; }
 .mp5.actual { outline: 3px solid #2CCB6F; outline-offset: 2px; }
+.p3-sheet .modal-header { border-bottom: 3px solid #D4A017; }
+.p3-cab { display: flex; align-items: center; gap: 12px; margin: 12px 0 6px; padding: 12px; border-radius: 14px; background: linear-gradient(135deg, #FFF6DC, #FFFBEF); border: 2px solid #D4A017; }
+.p3-sello { font-weight: 900; font-size: 1.1rem; border-radius: 10px; padding: 6px 10px; background: linear-gradient(135deg, #8A5A00, #D4A017 60%, #F3D27A); color: #241800; }
+.p3-cab b { display: block; color: #6B4A00; font-size: 1rem; } .p3-cab span { font-family: 'IBM Plex Mono', monospace; font-weight: 800; color: #6B4A00; }
+.p3-intro { font-size: .9rem; color: #333; margin: 10px 2px; }
+#p3Herramientas { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.p3h { display: flex; gap: 10px; align-items: center; background: #FFFBEF; border: 1px solid #EAD9A6; border-radius: 12px; padding: 9px 10px; }
+.p3h-ic { font-size: 1.4rem; } .p3h b { display: block; color: #6B4A00; font-size: .9rem; } .p3h b small { font-weight: 400; color: #8a7a55; } .p3h span { font-size: .78rem; color: #555; }
+.p3-pedir { display: block; width: 100%; margin-top: 14px; border: 0; border-radius: 12px; padding: 13px; font: inherit; font-weight: 800; cursor: pointer; background: linear-gradient(135deg, #8A5A00, #D4A017 60%, #F3D27A); color: #241800; font-size: 1rem; }
+.p3-nota { font-size: .76rem; color: #777; text-align: center; margin: 8px 0; }
+.p3-comparar { display: block; width: 100%; border: 2px solid #0D47A1; background: transparent; color: #0D47A1; border-radius: 12px; padding: 10px; font: inherit; font-weight: 700; cursor: pointer; }
 .mp5.foco { animation: mp5foco 1.6s ease-out 2; }   /* V43.2: al llegar desde «✨ P3 PRO» */
 @keyframes mp5foco { 0% { box-shadow: 0 0 0 0 rgba(212,160,23,.75); } 70% { box-shadow: 0 0 0 14px rgba(212,160,23,0); } 100% { box-shadow: 0 0 0 0 rgba(212,160,23,0); } }
 .mp5-cab { display: flex; align-items: center; gap: 8px; }
@@ -1173,7 +1184,7 @@ if (!/^[A-Z0-9]{2,10}$/.test(PREFIJO)) {
 
 // ========== CONFIG ==========
 const API_URL  = 'https://script.google.com/macros/s/AKfycbzlfo16ivECUH-qUkjIllj636bK9uE9GuFBxaddKK3KQT06xnrv1BObwlvFQ_3WvY_f/exec';
-const APP_VERSION = 43; // V43.2: botones ocultos por el comercio (P2/P3, Mis datos → ⚙️ Ajustes) y cotización propia con fecha (aviso a los 7 días) · en el celular las tarjetas se pliegan (una abierta, las demás en una línea con sus íconos; se recuerda cuál) · pastilla dorada «✨ P3 PRO» que abre Mi plan para quien no tiene P3 · V43.1: «Mi plan» con tarjetas (P2 abraza a P1, P3 abraza a P2; P2 recomendado; tu plan marcado) · V43 (v044.1): botonera desde la MATRIZ CENTRAL de aplicaciones del servidor (un botón por aplicación y su destino); Clientes abre clientes.html (antes Fiados), Mis datos abre misdatos.html e Inventario abre inventario.html (antes los dos abrían la misma ventana); tarjeta P3 PRO (paquete completo) y tarjeta ➕ Complementos (Cobro mixto, Monedas, Juego); Mi plan con P1/P2/P3 PRO y lo que suma cada uno · V42 (v044): la tarjeta P3 muestra cada complemento contratado (cotización, compras, salidas, finanzas, mis deudas, egresos, juego, voz) y abre su pantalla; P2 suma ↩️ Anular venta; 💳 Mi plan coherente (nombres del servidor, sin «Pagar» si el pago en línea está apagado: se pide a VAO) · V41 (v043): las funciones se muestran en TARJETAS por plan — P1 · Esencial, P2 · Gestión y P3 · Complementos — cada una con título, descripción y sus botones; solo las contratadas (sin tarjetas vacías ni botones bloqueados); en celular se apilan · V40 (v043): la barra se arma por plan — P1 Esencial (Ingresar, Hoy, Fiados) y P2 Gestión (Ajustar, Reportes) en grupos; se ve solo lo contratado y habilitado; 🔀 Mixto solo con el complemento Cobro avanzado; ✔️ Revisar inventario solo con P2; 💳 Mi plan muestra tu plan, complementos y vencimiento y permite pedir cambios por WhatsApp · V39: 🔀 Mixto (solo si VAO prende el cobro avanzado): varios medios, monedas, vuelto, fiar lo que falta o cobrar deuda, con Revisar antes de cobrar y reintento sin duplicar; Hoy muestra la caja del servidor (todos los equipos); Mis datos → ✔️ Revisar inventario (solo lectura) · V38: al fiar avisa si el cliente ya debe (solo lectura, no bloquea) · V37: sin 🏠 en el encabezado (cerraba la sesión); Salir pide confirmación; '¿Perdiste o te robaron el celular?' en la pantalla del PIN · V36: PIN oculto ●●●●●● con 👁️; 📣 Compartir con el afiche (menú del celular: elegís WhatsApp Business); PIN: cierra el teclado y muestra ⏳ Verificando visible arriba; aviso único de versión nueva · V35: 📣 comparte planes.html?v=N (WhatsApp guarda la vista previa vieja de un link ya enviado) · V34: botón 💬 Soporte por WhatsApp a VAO Sistemas (encabezado y pantalla del PIN) · V33: app instalable (manifest + service worker sin copias) y recuerda el último comercio · V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
+const APP_VERSION = 43; // V43.3: «✨ P3 PRO» abre su propia ventana (precio, las 7 herramientas que suma con su explicación, Pedir por WhatsApp y Comparar planes) · V43.2: botones ocultos por el comercio (P2/P3, Mis datos → ⚙️ Ajustes) y cotización propia con fecha (aviso a los 7 días) · en el celular las tarjetas se pliegan (una abierta, las demás en una línea con sus íconos; se recuerda cuál) · pastilla dorada «✨ P3 PRO» que abre Mi plan para quien no tiene P3 · V43.1: «Mi plan» con tarjetas (P2 abraza a P1, P3 abraza a P2; P2 recomendado; tu plan marcado) · V43 (v044.1): botonera desde la MATRIZ CENTRAL de aplicaciones del servidor (un botón por aplicación y su destino); Clientes abre clientes.html (antes Fiados), Mis datos abre misdatos.html e Inventario abre inventario.html (antes los dos abrían la misma ventana); tarjeta P3 PRO (paquete completo) y tarjeta ➕ Complementos (Cobro mixto, Monedas, Juego); Mi plan con P1/P2/P3 PRO y lo que suma cada uno · V42 (v044): la tarjeta P3 muestra cada complemento contratado (cotización, compras, salidas, finanzas, mis deudas, egresos, juego, voz) y abre su pantalla; P2 suma ↩️ Anular venta; 💳 Mi plan coherente (nombres del servidor, sin «Pagar» si el pago en línea está apagado: se pide a VAO) · V41 (v043): las funciones se muestran en TARJETAS por plan — P1 · Esencial, P2 · Gestión y P3 · Complementos — cada una con título, descripción y sus botones; solo las contratadas (sin tarjetas vacías ni botones bloqueados); en celular se apilan · V40 (v043): la barra se arma por plan — P1 Esencial (Ingresar, Hoy, Fiados) y P2 Gestión (Ajustar, Reportes) en grupos; se ve solo lo contratado y habilitado; 🔀 Mixto solo con el complemento Cobro avanzado; ✔️ Revisar inventario solo con P2; 💳 Mi plan muestra tu plan, complementos y vencimiento y permite pedir cambios por WhatsApp · V39: 🔀 Mixto (solo si VAO prende el cobro avanzado): varios medios, monedas, vuelto, fiar lo que falta o cobrar deuda, con Revisar antes de cobrar y reintento sin duplicar; Hoy muestra la caja del servidor (todos los equipos); Mis datos → ✔️ Revisar inventario (solo lectura) · V38: al fiar avisa si el cliente ya debe (solo lectura, no bloquea) · V37: sin 🏠 en el encabezado (cerraba la sesión); Salir pide confirmación; '¿Perdiste o te robaron el celular?' en la pantalla del PIN · V36: PIN oculto ●●●●●● con 👁️; 📣 Compartir con el afiche (menú del celular: elegís WhatsApp Business); PIN: cierra el teclado y muestra ⏳ Verificando visible arriba; aviso único de versión nueva · V35: 📣 comparte planes.html?v=N (WhatsApp guarda la vista previa vieja de un link ya enviado) · V34: botón 💬 Soporte por WhatsApp a VAO Sistemas (encabezado y pantalla del PIN) · V33: app instalable (manifest + service worker sin copias) y recuerda el último comercio · V32: el Historial se abre SOLO (cierra Mis datos antes; en algunos celulares quedaba tapado) · V31: 🕵️ Historial de cambios (solo lectura, backend v040.4) · V30: búsqueda por TODAS las palabras
 const HOY_KEY    = 'vao_ventas_' + PREFIJO + '_' + new Date().toISOString().slice(0, 10);
 const CARRITO_KEY= 'vao_carrito_' + PREFIJO;
 
@@ -1266,13 +1277,23 @@ function _plegablesV432_() {
     const apps = _appsV43_(), p3 = document.getElementById('btnVerP3');
     if (p3) p3.style.display = (PRESTACIONES_ACTUAL && PRESTACIONES_ACTUAL.planesP1P2P3 && apps && !apps.some(a => a.grupo === 'P3' && a.habilitada)) ? '' : 'none';
 }
-// V43.2: «✨ P3 PRO» abre Mi plan directo en la tarjeta P3 PRO (centrada y resaltada), no arriba de todo.
+// V43.3: «✨ P3 PRO» abre SU propia ventana (no Mi plan): precio, las herramientas que suma con su explicación y «Pedir P3 PRO».
+// Las herramientas salen de la matriz central del servidor (getConfig.prestaciones.apps, grupo P3); el precio, de getPlanesPublicos.
 async function verP3V432() {
-    await abrirPagoPlan();
-    const c = document.querySelector('#pagoPlanLista .mp5.PLUS'); if (!c) return;
-    c.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    c.classList.remove('foco'); void c.offsetWidth; c.classList.add('foco');
+    const m = document.getElementById('modalP3'); m.classList.add('open');
+    const andr = /Android/i.test(navigator.userAgent || ''), apps = (_appsV43_() || []).filter(a => a.grupo === 'P3');
+    document.getElementById('p3Herramientas').innerHTML = apps.map(a => '<div class="p3h"><span class="p3h-ic">' + _escHTML(a.icono) + '</span><div><b>' + _escHTML(a.nombre) + (a.soloAndroid ? ' <small>(celular Android)</small>' : '') + '</b><span>' + _escHTML(a.descripcion || '') + '</span></div></div>').join('') ||
+        '<div style="color:#777">Cotizar, Compras, Salidas, Egresos, Finanzas, Mis deudas y Voz.</div>';
+    document.getElementById('p3Cuantas').textContent = apps.length || 7;   // se listan todas (Voz con la aclaración «celular Android»)
+    const pr = document.getElementById('p3Precio'); pr.textContent = '…';
+    try { const r = await _llamarAPI('getPlanesPublicos', {}); const p3 = ((r && r.planes) || []).find(p => p.codigo === 'PLUS');
+          pr.textContent = p3 && p3.precioRegular > 0 ? '$' + Number(p3.precioRegular).toLocaleString('es-AR') + ' por mes' : 'precio a confirmar';
+          if (p3 && p3.nombre) document.getElementById('p3Nombre').textContent = p3.nombre; } catch (e) { pr.textContent = ''; }
+    try { if (!_MIPLAN_V40) await cargarMiPlanV40(); } catch (e) {}
 }
+function cerrarP3V433() { document.getElementById('modalP3').classList.remove('open'); }
+function pedirP3V433() { _pedirV42_(document.getElementById('p3Nombre').textContent || 'P3 PRO'); }
+function compararPlanesV433() { cerrarP3V433(); abrirPagoPlan(); }
 function _abrirTarjetaV432_(id, guardar) {
     ['tarjetaP1', 'tarjetaP2', 'tarjetaP3', 'tarjetaC'].forEach(function (g) {
         const t = document.getElementById(g); if (!t) return;
@@ -3849,6 +3870,24 @@ async function descargarDatos(que) {
             <div id="miPlanV40"></div>
             <div id="pagoPlanLista"></div>
             <div id="pagoPlanEstado" style="font-size:0.82rem;color:#0D47A1;font-weight:700;margin-top:10px;"></div>
+        </div>
+    </div>
+</div>
+<!-- ===== V43.3: ventana «✨ P3 PRO» (lo que suma el plan completo) ===== -->
+<div class="modal-bg" id="modalP3" onclick="if(event.target===this)cerrarP3V433()">
+    <div class="modal-sheet p3-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <span class="modal-titulo">✨ <span id="p3Nombre">P3 PRO</span></span>
+            <button class="modal-cerrar" onclick="cerrarP3V433()" aria-label="Cerrar">✕</button>
+        </div>
+        <div style="overflow-y:auto;max-height:78vh;padding:0 16px 18px;">
+            <div class="p3-cab"><span class="p3-sello">P3</span><div><b>El plan completo</b><span id="p3Precio">…</span></div></div>
+            <p class="p3-intro">Todo lo que ya usás de <b>P1</b> y <b>P2</b>, y además <b><span id="p3Cuantas">7</span> herramientas</b> para manejar el comercio entero:</p>
+            <div id="p3Herramientas"></div>
+            <button class="p3-pedir" onclick="pedirP3V433()">Pedir P3 PRO por WhatsApp</button>
+            <p class="p3-nota">Se activa cuando VAO Sistemas confirma tu pago. Tus ventas, productos y fiados no cambian.</p>
+            <button class="p3-comparar" onclick="compararPlanesV433()">Ver y comparar todos los planes</button>
         </div>
     </div>
 </div>
